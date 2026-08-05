@@ -36,6 +36,14 @@ yarn-error.log*
 # vercel
 .vercel
 
+# firebase cache
+.firebase/
+
+# temp/debug files
+found_chunk.js
+curl_output.html
+curl_output_utf8.html
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -127,7 +127,7 @@ function LoginScreen({ onLogin }: { onLogin: (e: string, p: string) => Promise<v
 /* ─── Dashboard ─── */
 function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string; onLogout: () => void }) {
   const isAdmin = userRole === "admin" || userRole === "moderator";
-  const [activeTab, setActiveTab] = useState<"inicio" | "documentos" | "usuarios" | "noticias_publicas">("inicio");
+  const [activeTab, setActiveTab] = useState<"avisos" | "calendario" | "documentos" | "usuarios" | "noticias_publicas">("avisos");
   
   // States Firestore
   const [documents, setDocuments] = useState<any[]>([]);
@@ -276,7 +276,8 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
           
           <div className="flex-1 flex justify-center overflow-x-auto hide-scrollbar">
              <div className="bg-gray-100 p-1 rounded-xl flex gap-1 min-w-max">
-               <button onClick={() => setActiveTab("inicio")} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'inicio' ? 'bg-white shadow-sm text-[#7B2FBE]' : 'text-gray-500 hover:text-gray-700'}`}><Megaphone className="w-4 h-4" /> Inicio</button>
+               <button onClick={() => setActiveTab("avisos")} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'avisos' ? 'bg-white shadow-sm text-[#7B2FBE]' : 'text-gray-500 hover:text-gray-700'}`}><Megaphone className="w-4 h-4" /> Avisos</button>
+               <button onClick={() => setActiveTab("calendario")} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'calendario' ? 'bg-white shadow-sm text-[#7B2FBE]' : 'text-gray-500 hover:text-gray-700'}`}><CalendarDays className="w-4 h-4" /> Calendario</button>
                <button onClick={() => setActiveTab("documentos")} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'documentos' ? 'bg-white shadow-sm text-[#7B2FBE]' : 'text-gray-500 hover:text-gray-700'}`}><FolderOpen className="w-4 h-4" /> Documentos</button>
                {isAdmin && (
                  <>
@@ -297,44 +298,45 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         
-        {/* ─── PESTAÑA INICIO (Noticias y Calendario) ─── */}
-        {activeTab === "inicio" && (
-          <div className="grid lg:grid-cols-12 gap-8 animate-fade-in">
-            {/* NOTICIAS (Protagonista) */}
-            <div className="lg:col-span-5 space-y-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-black font-heading text-[#1A1A2E] flex items-center gap-2">
-                  <Bell className="w-6 h-6 text-[#F5C518]" /> Avisos Importantes
-                </h2>
-                {isAdmin && (
-                  <button onClick={() => setShowNoticeModal(true)} className="flex items-center gap-1.5 text-xs font-bold text-white bg-[#7B2FBE] hover:bg-[#5C1FA0] px-3 py-2 rounded-xl transition-all shadow-md">
-                    <Plus className="w-4 h-4" /> Publicar
-                  </button>
-                )}
-              </div>
-              
-              <div className="space-y-4">
-                {announcements.length === 0 && <p className="text-sm text-gray-400 py-8 text-center bg-white rounded-3xl border border-gray-100">No hay avisos recientes.</p>}
-                {announcements.map((notice) => (
-                  <div key={notice.id} className={`p-6 rounded-3xl relative group border ${notice.isUrgent ? 'bg-red-50 border-red-200' : 'bg-white border-gray-100 shadow-sm'}`}>
-                    {isAdmin && (
-                      <button onClick={() => handleDelete("announcements", notice.id)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                    {notice.isUrgent && <span className="inline-block text-[10px] font-black uppercase text-red-600 bg-red-100 px-3 py-1 rounded-lg mb-3">🔴 Urgente</span>}
-                    <p className={`text-base leading-relaxed mb-4 ${notice.isUrgent ? 'text-red-900 font-medium' : 'text-[#1A1A2E]'}`}>{notice.content}</p>
-                    <div className="flex items-center justify-between text-xs font-bold text-gray-400">
-                      <span>Publicado por: {notice.author}</span>
-                      <span>{notice.createdAt?.toDate().toLocaleDateString('es-CL')}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+        {/* ─── PESTAÑA AVISOS ─── */}
+        {activeTab === "avisos" && (
+          <div className="animate-fade-in max-w-4xl mx-auto space-y-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-2xl font-black font-heading text-[#1A1A2E] flex items-center gap-2">
+                <Bell className="w-6 h-6 text-[#F5C518]" /> Avisos Importantes
+              </h2>
+              {isAdmin && (
+                <button onClick={() => setShowNoticeModal(true)} className="flex items-center gap-1.5 text-xs font-bold text-white bg-[#7B2FBE] hover:bg-[#5C1FA0] px-3 py-2 rounded-xl transition-all shadow-md">
+                  <Plus className="w-4 h-4" /> Publicar
+                </button>
+              )}
             </div>
+            
+            <div className="space-y-4">
+              {announcements.length === 0 && <p className="text-sm text-gray-400 py-8 text-center bg-white rounded-3xl border border-gray-100">No hay avisos recientes.</p>}
+              {announcements.map((notice) => (
+                <div key={notice.id} className={`p-6 rounded-3xl relative group border ${notice.isUrgent ? 'bg-red-50 border-red-200' : 'bg-white border-gray-100 shadow-sm'}`}>
+                  {isAdmin && (
+                    <button onClick={() => handleDelete("announcements", notice.id)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                  {notice.isUrgent && <span className="inline-block text-[10px] font-black uppercase text-red-600 bg-red-100 px-3 py-1 rounded-lg mb-3">🔴 Urgente</span>}
+                  <p className={`text-base leading-relaxed mb-4 ${notice.isUrgent ? 'text-red-900 font-medium' : 'text-[#1A1A2E]'}`}>{notice.content}</p>
+                  <div className="flex items-center justify-between text-xs font-bold text-gray-400">
+                    <span>Publicado por: {notice.author}</span>
+                    <span>{notice.createdAt?.toDate().toLocaleDateString('es-CL')}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-            {/* CALENDARIO E INFO EXTRA */}
-            <div className="lg:col-span-7 space-y-6">
+        {/* ─── PESTAÑA CALENDARIO ─── */}
+        {activeTab === "calendario" && (
+          <div className="grid lg:grid-cols-12 gap-8 animate-fade-in">
+            <div className="lg:col-span-8 space-y-6">
               <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-black font-heading text-[#1A1A2E] flex items-center gap-2">
@@ -357,16 +359,20 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                 </div>
                 {isAdmin && <p className="text-[10px] text-gray-400 mt-4 text-center">Haz clic en cualquier día para agendar un evento o actividad.</p>}
               </div>
+            </div>
 
+            <div className="lg:col-span-4 space-y-6">
               {/* SAPU Info - Small Banner */}
-              <div className="bg-gradient-to-r from-[#1A1A2E] to-[#2D1B69] rounded-3xl p-6 text-white flex items-center justify-between shadow-xl">
-                <div>
-                  <h3 className="font-bold text-lg mb-1">🚨 Horario SAPU</h3>
-                  <p className="text-white/60 text-sm">Servicio de Atención Primaria de Urgencia</p>
+              <div className="bg-gradient-to-r from-[#1A1A2E] to-[#2D1B69] rounded-3xl p-6 text-white shadow-xl">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-bold text-lg mb-1">🚨 Horario SAPU</h3>
+                    <p className="text-white/60 text-sm">Atención Primaria de Urgencia</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-[#F5C518] font-black text-xl">17:00 – 00:00</div>
-                  <div className="text-white/80 text-xs font-medium">Lunes a Viernes</div>
+                <div className="bg-white/10 rounded-2xl p-4 text-center">
+                  <div className="text-[#F5C518] font-black text-2xl mb-1">17:00 – 00:00</div>
+                  <div className="text-white/80 text-sm font-medium">Lunes a Viernes</div>
                 </div>
               </div>
             </div>
