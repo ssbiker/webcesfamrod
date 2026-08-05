@@ -17,11 +17,12 @@ import {
 } from "firebase/firestore";
 import Image from "next/image";
 import Link from "next/link";
+import { AvisosKanban, type Notice, type Board } from "@/components/avisos/AvisosKanban";
 import {
   Lock, Mail, AlertCircle, LogOut, FileSpreadsheet, FileText, FolderOpen,
   Users, Bell, Calendar as CalendarIcon, ChevronRight, Plus, ExternalLink, Home, Search,
   Settings, MessageCircle, Phone, Stethoscope, Shield, X, Maximize, Trash2,
-  FileIcon, ChevronLeft, CalendarDays, Megaphone
+  FileIcon, ChevronLeft, CalendarDays, Megaphone, ListTodo, Layers
 } from "lucide-react";
 
 /* ─── Helpers: Smart Parsing Google Drive ─── */
@@ -130,15 +131,17 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
   const [activeTab, setActiveTab] = useState<"avisos" | "calendario" | "documentos" | "usuarios" | "noticias_publicas">("avisos");
   
   // States Firestore
-  const [documents, setDocuments] = useState<any[]>([]);
-  const [announcements, setAnnouncements] = useState<any[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
-  const [publicNews, setPublicNews] = useState<any[]>([]);
-  const [usersList, setUsersList] = useState<any[]>([]);
+  const [documents, setDocuments] = useState<Record<string, any>[]>([]);
+  const [announcements, setAnnouncements] = useState<Record<string, any>[]>([]);
+  const [notices, setNotices] = useState<Notice[]>([]);
+  const [boards, setBoards] = useState<Board[]>([]);
+  const [events, setEvents] = useState<Record<string, any>[]>([]);
+  const [publicNews, setPublicNews] = useState<Record<string, any>[]>([]);
+  const [usersList, setUsersList] = useState<Record<string, any>[]>([]);
   const [searchDocQuery, setSearchDocQuery] = useState("");
 
   // States Modales Generales
-  const [fullScreenDoc, setFullScreenDoc] = useState<any | null>(null);
+  const [fullScreenDoc, setFullScreenDoc] = useState<Record<string, any> | null>(null);
   const [showDocModal, setShowDocModal] = useState(false);
   const [docForm, setDocForm] = useState({ title: "", description: "", url: "" });
   const [showNoticeModal, setShowNoticeModal] = useState(false);
@@ -162,13 +165,18 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
   useEffect(() => {
     const unsubDocs = onSnapshot(query(collection(db, "documents"), orderBy("createdAt", "desc")), snap => setDocuments(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubNotices = onSnapshot(query(collection(db, "announcements"), orderBy("createdAt", "desc")), snap => setAnnouncements(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubKanbanNotices = onSnapshot(query(collection(db, "announcements"), orderBy("createdAt", "desc")), snap => {
+      const data = snap.docs.map(d => ({ subnotes: [], ...d.data(), id: d.id } as unknown as Notice));
+      setNotices(data);
+    });
+    const unsubBoards = onSnapshot(query(collection(db, "boards"), orderBy("order", "asc")), snap => setBoards(snap.docs.map(d => ({ ...d.data(), id: d.id } as unknown as Board))));
     const unsubEvents = onSnapshot(query(collection(db, "events")), snap => setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     const unsubPublicNews = onSnapshot(query(collection(db, "public_news"), orderBy("createdAt", "desc")), snap => setPublicNews(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
     
     let unsubUsers = () => {};
     if (isAdmin) unsubUsers = onSnapshot(collection(db, "users"), snap => setUsersList(snap.docs.map(d => ({ uid: d.id, ...d.data() }))));
 
-    return () => { unsubDocs(); unsubNotices(); unsubEvents(); unsubPublicNews(); unsubUsers(); };
+    return () => { unsubDocs(); unsubNotices(); unsubKanbanNotices(); unsubBoards(); unsubEvents(); unsubPublicNews(); unsubUsers(); };
   }, [isAdmin]);
 
   /* ─── Acciones CRUD ─── */
@@ -263,35 +271,90 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F8FC] flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-[#f1eaff] via-[#e8f2ff] to-[#e0f7fa] flex flex-col">
       {/* ─── HEADER Y TABS ─── */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-40 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 relative"><Image src="/logo.png" alt="Logo" fill sizes="36px" className="object-contain" /></div>
+      <header className="bg-white/60 backdrop-blur-2xl border-b border-white/60 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3 border-b border-white/40">
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="w-8 h-8 relative"><Image src="/logo.png" alt="Logo" fill sizes="32px" className="object-contain" loading="eager" /></div>
             <div className="hidden sm:block">
               <div className="font-black text-sm text-[#1A1A2E] font-heading leading-none">Intranet CESFAM</div>
+              <div className="text-[10px] text-gray-400 font-medium">Rodelillo</div>
             </div>
           </div>
-          
-          <div className="flex-1 flex justify-center overflow-x-auto hide-scrollbar">
-             <div className="bg-gray-100 p-1 rounded-xl flex gap-1 min-w-max">
-               <button onClick={() => setActiveTab("avisos")} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'avisos' ? 'bg-white shadow-sm text-[#7B2FBE]' : 'text-gray-500 hover:text-gray-700'}`}><Megaphone className="w-4 h-4" /> Avisos</button>
-               <button onClick={() => setActiveTab("calendario")} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'calendario' ? 'bg-white shadow-sm text-[#7B2FBE]' : 'text-gray-500 hover:text-gray-700'}`}><CalendarDays className="w-4 h-4" /> Calendario</button>
-               <button onClick={() => setActiveTab("documentos")} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'documentos' ? 'bg-white shadow-sm text-[#7B2FBE]' : 'text-gray-500 hover:text-gray-700'}`}><FolderOpen className="w-4 h-4" /> Documentos</button>
-               {isAdmin && (
-                 <>
-                   <button onClick={() => setActiveTab("noticias_publicas")} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'noticias_publicas' ? 'bg-white shadow-sm text-[#7B2FBE]' : 'text-gray-500 hover:text-gray-700'}`}><Megaphone className="w-4 h-4" /> Web Pública</button>
-                   <button onClick={() => setActiveTab("usuarios")} className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'usuarios' ? 'bg-white shadow-sm text-[#7B2FBE]' : 'text-gray-500 hover:text-gray-700'}`}><Users className="w-4 h-4" /> Usuarios</button>
-                 </>
-               )}
-             </div>
-          </div>
 
-          <div className="flex items-center gap-4">
-            <button onClick={onLogout} className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-red-500 font-bold transition-colors">
-              <LogOut className="w-4 h-4" /> <span className="hidden sm:inline">Salir</span>
+          <div className="flex items-center gap-2">
+            {/* Mis Tareas */}
+            <div className="relative">
+              <button
+                className="relative flex items-center p-2 text-gray-500 hover:text-[#7B2FBE] hover:bg-purple-50 rounded-full transition-colors"
+                title="Mis Tareas Kanban"
+              >
+                <ListTodo className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Web Pública */}
+            <a
+              href="/"
+              className="hidden sm:flex items-center gap-1.5 text-xs text-[#7B2FBE] hover:text-[#5C1FA0] bg-purple-50 px-2.5 py-1.5 rounded-lg font-bold transition-colors border border-purple-100 shadow-sm"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Web Pública
+            </a>
+
+            {/* User info + logout */}
+            <div className="flex items-center gap-2 border-l border-gray-200 pl-2">
+              <div className="hidden lg:flex flex-col items-end">
+                <span className="text-xs font-black text-[#1A1A2E] leading-none">{user.displayName || user.email?.split("@")[0]}</span>
+                <span className="text-[10px] font-medium text-gray-400 leading-none mt-0.5">{user.email}</span>
+              </div>
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7B2FBE] to-[#5C1FA0] flex items-center justify-center text-white font-black shadow-sm ring-2 ring-purple-100 text-sm shrink-0">
+                {(user.displayName || user.email || "?")[0].toUpperCase()}
+              </div>
+            </div>
+
+            <button title="Cerrar sesión" onClick={onLogout} className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+              <LogOut className="w-4 h-4" />
             </button>
+          </div>
+        </div>
+
+        {/* ─── TABS ─── */}
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar py-1.5">
+            <button onClick={() => setActiveTab("avisos")} className={`relative shrink-0 px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'avisos' ? 'bg-[#7B2FBE] text-white shadow-sm' : 'text-gray-600 hover:text-[#7B2FBE] hover:bg-purple-50'}`}>
+              <Bell className="w-4 h-4" /> Avisos
+              <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${activeTab === 'avisos' ? 'bg-white/30 text-white' : 'bg-purple-100 text-purple-600'}`}>{notices.filter((n:any) => !n.isDeleted && !n.deleted).length}</span>
+            </button>
+            <button onClick={() => setActiveTab("calendario")} className={`shrink-0 px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'calendario' ? 'bg-[#7B2FBE] text-white shadow-sm' : 'text-gray-600 hover:text-[#7B2FBE] hover:bg-purple-50'}`}>
+              <CalendarDays className="w-4 h-4" /> Calendario
+            </button>
+            <button onClick={() => setActiveTab("documentos")} className={`shrink-0 px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'documentos' ? 'bg-[#7B2FBE] text-white shadow-sm' : 'text-gray-600 hover:text-[#7B2FBE] hover:bg-purple-50'}`}>
+              <FolderOpen className="w-4 h-4" /> Documentos
+            </button>
+            {isAdmin && (
+              <>
+                <button onClick={() => setActiveTab("noticias_publicas")} className={`shrink-0 px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'noticias_publicas' ? 'bg-[#7B2FBE] text-white shadow-sm' : 'text-gray-600 hover:text-[#7B2FBE] hover:bg-purple-50'}`}>
+                  <Megaphone className="w-4 h-4" /> Web Pública
+                </button>
+                <button onClick={() => setActiveTab("usuarios")} className={`shrink-0 px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'usuarios' ? 'bg-[#7B2FBE] text-white shadow-sm' : 'text-gray-600 hover:text-[#7B2FBE] hover:bg-purple-50'}`}>
+                  <Users className="w-4 h-4" /> Usuarios
+                </button>
+              </>
+            )}
+
+            {/* Separador */}
+            <div className="w-px h-5 bg-gray-200 mx-1 shrink-0" />
+
+            {/* Botón Gestión */}
+            <a
+              href="https://gestion-rodelillo.web.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-black bg-amber-400/20 text-amber-700 hover:bg-amber-400/30 transition-all border border-amber-300/50"
+            >
+              <Layers className="w-4 h-4" />Gestión
+            </a>
           </div>
         </div>
       </header>
@@ -300,36 +363,14 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
         
         {/* ─── PESTAÑA AVISOS ─── */}
         {activeTab === "avisos" && (
-          <div className="animate-fade-in max-w-4xl mx-auto space-y-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-black font-heading text-[#1A1A2E] flex items-center gap-2">
-                <Bell className="w-6 h-6 text-[#F5C518]" /> Avisos Importantes
-              </h2>
-              {isAdmin && (
-                <button onClick={() => setShowNoticeModal(true)} className="flex items-center gap-1.5 text-xs font-bold text-white bg-[#7B2FBE] hover:bg-[#5C1FA0] px-3 py-2 rounded-xl transition-all shadow-md">
-                  <Plus className="w-4 h-4" /> Publicar
-                </button>
-              )}
-            </div>
-            
-            <div className="space-y-4">
-              {announcements.length === 0 && <p className="text-sm text-gray-400 py-8 text-center bg-white rounded-3xl border border-gray-100">No hay avisos recientes.</p>}
-              {announcements.map((notice) => (
-                <div key={notice.id} className={`p-6 rounded-3xl relative group border ${notice.isUrgent ? 'bg-red-50 border-red-200' : 'bg-white border-gray-100 shadow-sm'}`}>
-                  {isAdmin && (
-                    <button onClick={() => handleDelete("announcements", notice.id)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                  {notice.isUrgent && <span className="inline-block text-[10px] font-black uppercase text-red-600 bg-red-100 px-3 py-1 rounded-lg mb-3">🔴 Urgente</span>}
-                  <p className={`text-base leading-relaxed mb-4 ${notice.isUrgent ? 'text-red-900 font-medium' : 'text-[#1A1A2E]'}`}>{notice.content}</p>
-                  <div className="flex items-center justify-between text-xs font-bold text-gray-400">
-                    <span>Publicado por: {notice.author}</span>
-                    <span>{notice.createdAt?.toDate().toLocaleDateString('es-CL')}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+          <div className="animate-fade-in">
+            <AvisosKanban
+              notices={notices}
+              boards={boards}
+              userEmail={user.email ?? ""}
+              isAdmin={isAdmin}
+              canCreate={isAdmin}
+            />
           </div>
         )}
 
