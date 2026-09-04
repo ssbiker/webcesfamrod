@@ -713,6 +713,15 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                               />
                               <span className="text-gray-500 font-bold">Tablero Gestión</span>
                             </label>
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={!!u.hasFarmaciaAccess} 
+                                onChange={(e) => updateDoc(doc(db, "users", u.uid), { hasFarmaciaAccess: e.target.checked })}
+                                className="w-3.5 h-3.5 text-emerald-600 rounded" 
+                              />
+                              <span className="text-emerald-700 font-bold">💊 Acceso Farmacia</span>
+                            </label>
                           </div>
                         </td>
                         <td className="py-4 px-6">
