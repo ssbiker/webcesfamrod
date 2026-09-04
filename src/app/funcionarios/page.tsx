@@ -907,14 +907,19 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
             </div>
             {userFormStatus && <div className="mb-6 text-center text-sm font-bold text-[#7B2FBE] bg-purple-50 py-3 rounded-xl">{userFormStatus}</div>}
             <form onSubmit={handleCreateUser} className="space-y-5">
+              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Nombre Completo</label><input type="text" required value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" placeholder="Ej: Juan Pérez" /></div>
               <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Correo Electrónico</label><input type="email" required value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" /></div>
               <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Contraseña Provisoria</label><input type="password" required value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" minLength={6} /></div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Rol Inicial</label>
                 <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none font-bold">
                   <option value="funcionario">Funcionario</option>
+                  <option value="moderator">Moderador</option>
                   <option value="admin">Administrador</option>
                 </select>
+                <p className="text-[11px] text-gray-400 mt-1.5 pl-1">
+                  <strong>Funcionario</strong>: solo lectura · <strong>Moderador</strong>: puede crear avisos · <strong>Administrador</strong>: acceso total
+                </p>
               </div>
               <button type="submit" className="w-full bg-[#7B2FBE] hover:bg-[#5C1FA0] text-white font-bold py-3.5 rounded-xl mt-4">Crear Cuenta</button>
             </form>
