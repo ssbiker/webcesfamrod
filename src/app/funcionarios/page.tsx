@@ -13,7 +13,7 @@ import {
 } from "firebase/auth";
 import {
   collection, doc, setDoc, getDoc, addDoc, updateDoc, deleteDoc,
-  onSnapshot, query, orderBy, Timestamp
+  onSnapshot, query, orderBy, Timestamp, where
 } from "firebase/firestore";
 import Image from "next/image";
 import Link from "next/link";
@@ -138,7 +138,10 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
   const [events, setEvents] = useState<Record<string, any>[]>([]);
   const [publicNews, setPublicNews] = useState<Record<string, any>[]>([]);
   const [usersList, setUsersList] = useState<Record<string, any>[]>([]);
+  const [userFilter, setUserFilter] = useState("Todos");
   const [searchDocQuery, setSearchDocQuery] = useState("");
+  const [myTasks, setMyTasks] = useState<Record<string, any>[]>([]);
+  const [showTasksPanel, setShowTasksPanel] = useState(false);
 
   // States Modales Generales
   const [fullScreenDoc, setFullScreenDoc] = useState<Record<string, any> | null>(null);
@@ -147,7 +150,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
   const [showNoticeModal, setShowNoticeModal] = useState(false);
   const [noticeForm, setNoticeForm] = useState({ content: "", isUrgent: false });
   const [showUserModal, setShowUserModal] = useState(false);
-  const [userForm, setUserForm] = useState({ email: "", password: "", role: "funcionario" });
+  const [userForm, setUserForm] = useState({ email: "", password: "", name: "", role: "funcionario" });
   const [userFormStatus, setUserFormStatus] = useState("");
 
   // States Calendario
@@ -159,7 +162,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
   const [eventForm, setEventForm] = useState({ title: "", time: "", color: "#7B2FBE" });
 
   const [showPublicNoticeModal, setShowPublicNoticeModal] = useState(false);
-  const [publicNoticeForm, setPublicNoticeForm] = useState({ title: "", content: "" });
+  const [publicNoticeForm, setPublicNoticeForm] = useState({ title: "", content: "", category: "Aviso", isPinned: false, imageUrl: "" });
 
   // Listeners
   useEffect(() => {
@@ -176,7 +179,18 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
     let unsubUsers = () => {};
     if (isAdmin) unsubUsers = onSnapshot(collection(db, "users"), snap => setUsersList(snap.docs.map(d => ({ uid: d.id, ...d.data() }))));
 
-    return () => { unsubDocs(); unsubNotices(); unsubKanbanNotices(); unsubBoards(); unsubEvents(); unsubPublicNews(); unsubUsers(); };
+    // Tareas asignadas al usuario actual desde el módulo de Gestión
+    const tasksQ = query(
+      collection(db, "gestion_tasks"),
+      where("assignedTo", "==", user.email)
+    );
+    const unsubTasks = onSnapshot(tasksQ, snap => {
+      setMyTasks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    }, () => {
+      // Si hay error de permisos, simplemente ignorar
+    });
+
+    return () => { unsubDocs(); unsubNotices(); unsubKanbanNotices(); unsubBoards(); unsubEvents(); unsubPublicNews(); unsubUsers(); unsubTasks(); };
   }, [isAdmin]);
 
   /* ─── Acciones CRUD ─── */
@@ -204,8 +218,8 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
   const handleAddPublicNotice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!publicNoticeForm.title || !publicNoticeForm.content) return;
-    await addDoc(collection(db, "public_news"), { title: publicNoticeForm.title, content: publicNoticeForm.content, author: user.email?.split("@")[0] ?? "Admin", createdAt: Timestamp.now() });
-    setShowPublicNoticeModal(false); setPublicNoticeForm({ title: "", content: "" });
+    await addDoc(collection(db, "public_news"), { title: publicNoticeForm.title, content: publicNoticeForm.content, category: publicNoticeForm.category || "Aviso", isPinned: !!publicNoticeForm.isPinned, imageUrl: publicNoticeForm.imageUrl || "", author: user.email?.split("@")[0] ?? "Admin", createdAt: Timestamp.now() });
+    setShowPublicNoticeModal(false); setPublicNoticeForm({ title: "", content: "", category: "Aviso", isPinned: false, imageUrl: "" });
   };
 
   const handleDelete = async (coll: string, id: string) => {
@@ -218,10 +232,10 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
     try {
       const secondaryApp = getApps().find(a => a.name === "SecondaryApp") || initializeApp(app.options!, "SecondaryApp");
       const res = await createUserWithEmailAndPassword(getAuth(secondaryApp), userForm.email, userForm.password);
-      await setDoc(doc(db, "users", res.user.uid), { email: res.user.email, role: userForm.role, createdAt: Timestamp.now() });
+      await setDoc(doc(db, "users", res.user.uid), { email: res.user.email, name: userForm.name, role: userForm.role, isGenericAccount: false, hasGestionAccess: false, loginCount: 0, isOnline: false, createdAt: Timestamp.now() });
       await getAuth(secondaryApp).signOut();
       setUserFormStatus("¡Usuario creado exitosamente!");
-      setTimeout(() => { setShowUserModal(false); setUserFormStatus(""); setUserForm({ email: "", password: "", role: "funcionario" }); }, 1500);
+      setTimeout(() => { setShowUserModal(false); setUserFormStatus(""); setUserForm({ email: "", password: "", name: "", role: "funcionario" }); }, 1500);
     } catch (err: any) { setUserFormStatus("Error: " + err.message); }
   };
 
@@ -287,11 +301,80 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
             {/* Mis Tareas */}
             <div className="relative">
               <button
+                onClick={() => setShowTasksPanel(prev => !prev)}
                 className="relative flex items-center p-2 text-gray-500 hover:text-[#7B2FBE] hover:bg-purple-50 rounded-full transition-colors"
                 title="Mis Tareas Kanban"
               >
                 <ListTodo className="w-5 h-5" />
+                {myTasks.filter(t => t.status !== "completado" && t.status !== "done" && t.status !== "completed").length > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-sm">
+                    {myTasks.filter(t => t.status !== "completado" && t.status !== "done" && t.status !== "completed").length > 9 ? "9+" : myTasks.filter(t => t.status !== "completado" && t.status !== "done" && t.status !== "completed").length}
+                  </span>
+                )}
               </button>
+
+              {/* Panel desplegable de tareas */}
+              {showTasksPanel && (
+                <>
+                  {/* Overlay para cerrar */}
+                  <div className="fixed inset-0 z-40" onClick={() => setShowTasksPanel(false)} />
+                  <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-[#7B2FBE]/5 to-transparent">
+                      <div className="flex items-center gap-2">
+                        <ListTodo className="w-4 h-4 text-[#7B2FBE]" />
+                        <span className="font-black text-sm text-[#1A1A2E]">Mis Tareas</span>
+                        <span className="text-[10px] font-bold bg-[#7B2FBE] text-white px-1.5 py-0.5 rounded-full">{myTasks.length}</span>
+                      </div>
+                      <button onClick={() => setShowTasksPanel(false)} className="text-gray-400 hover:text-gray-600">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="max-h-80 overflow-y-auto">
+                      {myTasks.length === 0 ? (
+                        <div className="py-10 text-center">
+                          <div className="text-3xl mb-2">✅</div>
+                          <p className="text-sm font-bold text-gray-500">¡Sin tareas pendientes!</p>
+                          <p className="text-xs text-gray-400 mt-1">Todo al día.</p>
+                        </div>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {myTasks.map(task => {
+                            const isDone = task.status === "completado" || task.status === "done" || task.status === "completed";
+                            const isUrgent = task.priority === "alta" || task.priority === "urgente" || task.priority === "high";
+                            const dueDate = task.dueDate?.toDate ? task.dueDate.toDate() : task.dueDate ? new Date(task.dueDate) : null;
+                            const isOverdue = dueDate && dueDate < new Date() && !isDone;
+                            return (
+                              <div key={task.id} className={`px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors ${isDone ? "opacity-50" : ""}`}>
+                                <div className={`mt-0.5 w-2.5 h-2.5 rounded-full shrink-0 ${isDone ? "bg-green-400" : isOverdue ? "bg-red-500" : isUrgent ? "bg-amber-500" : "bg-[#7B2FBE]"}`} />
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-sm font-bold text-[#1A1A2E] truncate ${isDone ? "line-through" : ""}`}>{task.title || task.name || "Sin título"}</p>
+                                  {task.description && <p className="text-xs text-gray-400 truncate mt-0.5">{task.description}</p>}
+                                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                    {task.status && (
+                                      <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full ${isDone ? "bg-green-100 text-green-700" : "bg-purple-100 text-[#7B2FBE]"}`}>
+                                        {task.status}
+                                      </span>
+                                    )}
+                                    {isOverdue && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">Vencida</span>}
+                                    {dueDate && !isOverdue && <span className="text-[9px] text-gray-400 font-bold">{dueDate.toLocaleDateString("es-CL")}</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
+                      <a href="/gestion" className="flex items-center justify-center gap-2 text-xs font-bold text-[#7B2FBE] hover:text-[#5C1FA0] transition-colors">
+                        Ir al Módulo de Gestión <ChevronRight className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Web Pública */}
@@ -467,49 +550,154 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
           </div>
         )}
 
+
         {/* ─── PESTAÑA USUARIOS ─── */}
         {activeTab === "usuarios" && isAdmin && (
-          <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm animate-fade-in">
-            <div className="flex items-center justify-between mb-8">
-              <div>
-                <h2 className="text-2xl font-black font-heading text-[#1A1A2E]">Directorio y Permisos</h2>
-                <p className="text-sm text-gray-500 mt-1">Administra los accesos al portal interno.</p>
+          <div className="space-y-6 animate-fade-in">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
+                  <span className="text-xs font-bold text-green-700 uppercase tracking-wider">En línea</span>
+                </div>
+                <div className="text-3xl font-black text-green-700">{usersList.filter(u => u.isOnline).length}</div>
+                <div className="text-xs text-green-600 mt-1">conectados ahora</div>
               </div>
-              <button onClick={() => setShowUserModal(true)} className="flex items-center gap-2 bg-[#7B2FBE] hover:bg-[#5C1FA0] text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-md">
-                <Users className="w-5 h-5" /> Registrar Usuario
-              </button>
+              <div className="bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-100 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-3.5 h-3.5 text-[#7B2FBE]" />
+                  <span className="text-xs font-bold text-[#7B2FBE] uppercase tracking-wider">Total</span>
+                </div>
+                <div className="text-3xl font-black text-[#7B2FBE]">{usersList.length}</div>
+                <div className="text-xs text-purple-500 mt-1">cuentas registradas</div>
+              </div>
+              <div className="bg-gradient-to-br from-blue-50 to-sky-50 border border-blue-100 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-3.5 h-3.5 text-blue-600" />
+                  <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">Frecuentes</span>
+                </div>
+                <div className="text-3xl font-black text-blue-700">{usersList.filter(u => (u.loginCount || 0) >= 5).length}</div>
+                <div className="text-xs text-blue-500 mt-1">+5 accesos totales</div>
+              </div>
+              <div className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-100 rounded-2xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-3.5 h-3.5 text-red-600" />
+                  <span className="text-xs font-bold text-red-700 uppercase tracking-wider">Sin acceso</span>
+                </div>
+                <div className="text-3xl font-black text-red-700">{usersList.filter(u => !u.lastLogin).length}</div>
+                <div className="text-xs text-red-500 mt-1">nunca se conectaron</div>
+              </div>
             </div>
 
-            <div className="overflow-x-auto rounded-2xl border border-gray-100">
-              <table className="w-full text-left border-collapse">
-                <thead className="bg-gray-50">
-                  <tr className="border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                    <th className="py-4 px-6">Correo Institucional</th>
-                    <th className="py-4 px-6">Rol Actual</th>
-                    <th className="py-4 px-6">Registro</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm">
-                  {usersList.map(u => (
-                    <tr key={u.uid} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                      <td className="py-4 px-6 font-semibold text-[#1A1A2E]">{u.email}</td>
-                      <td className="py-4 px-6">
-                        <select 
-                          value={u.role} 
-                          onChange={(e) => updateDoc(doc(db, "users", u.uid), { role: e.target.value })}
-                          className={`text-xs font-black uppercase tracking-wide px-4 py-2 rounded-xl outline-none cursor-pointer transition-colors ${u.role === 'admin' ? 'bg-purple-100 text-purple-700 hover:bg-purple-200' : 'bg-green-100 text-green-700 hover:bg-green-200'}`}
-                        >
-                          <option value="admin">Admin</option>
-                          <option value="funcionario">Funcionario</option>
-                        </select>
-                      </td>
-                      <td className="py-4 px-6 text-gray-400 text-xs font-medium">
-                        {u.createdAt ? u.createdAt.toDate().toLocaleDateString('es-CL') : 'N/A'}
-                      </td>
+            <div className="bg-white rounded-3xl border border-gray-100 p-6 shadow-sm">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                  <h2 className="text-2xl font-black font-heading text-[#1A1A2E]">Directorio y Actividad</h2>
+                  <p className="text-sm text-gray-500 mt-1">Gestiona accesos y monitorea la actividad del equipo.</p>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex bg-gray-50 rounded-xl p-1 border border-gray-100">
+                    {["Todos", "En Línea", "Frecuentes", "Sin Conexión"].map(filter => (
+                      <button 
+                        key={filter} 
+                        onClick={() => setUserFilter(filter)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${userFilter === filter ? 'bg-white text-[#7B2FBE] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}
+                      >
+                        {filter}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={() => setShowUserModal(true)} className="flex items-center gap-2 bg-[#7B2FBE] hover:bg-[#5C1FA0] text-white font-bold px-5 py-2.5 rounded-xl transition-all shadow-md">
+                    <Users className="w-4 h-4" /> Registrar Funcionario
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto rounded-2xl border border-gray-100">
+                <table className="w-full text-left border-collapse">
+                  <thead className="bg-gray-50">
+                    <tr className="border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                      <th className="py-4 px-6">Funcionario</th>
+                      <th className="py-4 px-6">Rol y Equipo</th>
+                      <th className="py-4 px-6">Estado & Actividad</th>
+                      <th className="py-4 px-6 text-center">Acciones</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="text-sm">
+                    {usersList.filter(u => {
+                      if (userFilter === "En Línea") return u.isOnline;
+                      if (userFilter === "Frecuentes") return (u.loginCount || 0) >= 5;
+                      if (userFilter === "Sin Conexión") return !u.isOnline;
+                      return true;
+                    }).map(u => (
+                      <tr key={u.uid} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                        <td className="py-4 px-6">
+                          <div className="font-bold text-[#1A1A2E] flex items-center gap-2">{u.name || "Funcionario"}</div>
+                          <div className="text-xs text-gray-400">{u.email}</div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <select 
+                            value={u.role || 'funcionario'} 
+                            onChange={(e) => updateDoc(doc(db, "users", u.uid), { role: e.target.value })}
+                            className="text-xs font-black uppercase tracking-wide px-3 py-1.5 rounded-lg outline-none cursor-pointer transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+                          >
+                            <option value="admin">Administrador</option>
+                            <option value="moderator">Moderador</option>
+                            <option value="funcionario">Funcionario</option>
+                          </select>
+                          <div className="mt-2 text-xs flex flex-col gap-1.5">
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={!!u.isGenericAccount} 
+                                onChange={(e) => updateDoc(doc(db, "users", u.uid), { isGenericAccount: e.target.checked })}
+                                className="w-3.5 h-3.5 text-[#7B2FBE] rounded" 
+                              />
+                              <span className="text-gray-500 font-bold">Cuenta Genérica</span>
+                            </label>
+                            <label className="flex items-center gap-1.5 cursor-pointer">
+                              <input 
+                                type="checkbox" 
+                                checked={!!u.hasGestionAccess} 
+                                onChange={(e) => updateDoc(doc(db, "users", u.uid), { hasGestionAccess: e.target.checked })}
+                                className="w-3.5 h-3.5 text-blue-600 rounded" 
+                              />
+                              <span className="text-gray-500 font-bold">Tablero Gestión</span>
+                            </label>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="flex flex-col gap-1.5">
+                            <div className={`flex items-center gap-1.5 text-xs font-bold ${u.isOnline ? 'text-green-600' : 'text-gray-400'}`}>
+                              <div className={`w-2.5 h-2.5 rounded-full ${u.isOnline ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                              {u.isOnline ? 'En línea' : 'Desconectado'}
+                            </div>
+                            <div className="text-xs text-gray-500 flex items-center gap-2">
+                              Accesos Totales: <strong className="text-[#1A1A2E]">{u.loginCount || 0}</strong>
+                            </div>
+                            <div className="text-xs text-gray-500 flex items-center gap-2">
+                              Última vez: <span>{u.lastLogin ? u.lastLogin.toDate().toLocaleDateString('es-CL') : 'Nunca'}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="py-4 px-6 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button onClick={() => alert("Función para editar nombre en desarrollo...")} title="Editar Nombre" className="p-2 rounded-lg bg-gray-50 text-gray-400 hover:text-[#7B2FBE] hover:bg-purple-50 transition-colors border border-gray-100">
+                              <Settings className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => alert("Restablecer contraseña enviará un email. Función en desarrollo...")} title="Restablecer Contraseña" className="text-xs font-bold bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-2 rounded-lg transition-colors border border-blue-100">
+                              Reset Pass
+                            </button>
+                            <button onClick={() => handleDelete("users", u.uid)} title="Eliminar Usuario" className="p-2 rounded-lg bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors border border-gray-100">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -529,19 +717,37 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
               {publicNews.length === 0 && <div className="col-span-full py-12 text-center text-gray-400 bg-white rounded-3xl border border-gray-100">No hay noticias públicas publicadas.</div>}
               {publicNews.map(news => (
-                <div key={news.id} className="bg-white border border-gray-100 rounded-3xl p-6 hover:shadow-xl transition-all relative group">
-                  <button onClick={() => handleDelete("public_news", news.id)} className="absolute top-4 right-4 text-gray-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div key={news.id} className="bg-white border rounded-3xl p-6 hover:shadow-xl transition-all relative group flex flex-col border-[#7B2FBE]/30 shadow-[0_4px_20px_rgba(123,47,190,0.1)]">
+                  <button onClick={() => handleDelete("public_news", news.id)} className="absolute z-10 top-4 right-4 bg-white/80 backdrop-blur p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all shadow-sm">
                     <Trash2 className="w-4 h-4" />
                   </button>
+                  
+                  {news.imageUrl && (
+                    <div className="w-full h-32 mb-4 rounded-xl overflow-hidden relative shrink-0">
+                      <img alt={news.title} loading="lazy" decoding="async" className="object-cover absolute inset-0 w-full h-full" src={news.imageUrl} />
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className="text-[10px] font-black uppercase px-2 py-1 rounded-md bg-gray-100 text-gray-600">{news.category || "Aviso"}</span>
+                    {news.isPinned && (
+                      <span className="text-[10px] font-black uppercase px-2 py-1 rounded-md bg-purple-100 text-purple-700 flex items-center gap-1">
+                        <AlertCircle className="w-3 h-3" /> Destacado
+                      </span>
+                    )}
+                  </div>
+                  
                   <h3 className="font-black text-xl text-[#1A1A2E] mb-3 pr-6">{news.title}</h3>
-                  <p className="text-sm text-gray-500 line-clamp-4 mb-4 whitespace-pre-wrap">{news.content}</p>
-                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{news.createdAt?.toDate().toLocaleDateString('es-CL')}</div>
+                  <p className="text-sm text-gray-500 line-clamp-3 mb-4 whitespace-pre-wrap flex-1">{news.content}</p>
+                  
+                  <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-auto border-t border-gray-50 pt-3">
+                    {news.createdAt?.toDate().toLocaleDateString('es-CL')}
+                  </div>
                 </div>
               ))}
             </div>
           </div>
         )}
-
       </main>
 
       {/* ─── THEATER MODE ─── */}
@@ -662,21 +868,33 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl w-full max-w-lg p-8 shadow-2xl animate-fade-up">
             <div className="flex justify-between items-center mb-8">
-              <h3 className="text-xl font-black font-heading text-[#1A1A2E]">Noticia para Pacientes</h3>
+              <h3 className="text-xl font-black font-heading text-[#1A1A2E]">Nueva Noticia Pública</h3>
               <button onClick={() => setShowPublicNoticeModal(false)}><X className="w-6 h-6 text-gray-400 hover:text-red-500" /></button>
             </div>
-            <form onSubmit={handleAddPublicNotice} className="space-y-5">
+            <form onSubmit={handleAddPublicNotice} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Título Atractivo</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Título de la Noticia</label>
                 <input type="text" required value={publicNoticeForm.title} onChange={e => setPublicNoticeForm({...publicNoticeForm, title: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none font-bold text-lg" />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Cuerpo de la Noticia</label>
-                <textarea required rows={6} value={publicNoticeForm.content} onChange={e => setPublicNoticeForm({...publicNoticeForm, content: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none resize-none" placeholder="Escribe el anuncio público..." />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Categoría</label>
+                  <input type="text" required value={publicNoticeForm.category} onChange={e => setPublicNoticeForm({...publicNoticeForm, category: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" placeholder="Ej: Aviso, Salud..." />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">URL Imagen (Opcional)</label>
+                  <input type="url" value={publicNoticeForm.imageUrl} onChange={e => setPublicNoticeForm({...publicNoticeForm, imageUrl: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" placeholder="https://..." />
+                </div>
               </div>
-              <button type="submit" className="w-full bg-gradient-to-r from-[#7B2FBE] to-[#5CB85C] hover:scale-[1.02] transition-transform text-white font-black py-4 rounded-xl shadow-lg mt-4">
-                Publicar en la Web Principal
-              </button>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Contenido</label>
+                <textarea required rows={5} value={publicNoticeForm.content} onChange={e => setPublicNoticeForm({...publicNoticeForm, content: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none resize-none" placeholder="Escribe el anuncio público..." />
+              </div>
+              <label className="flex items-center gap-3 cursor-pointer bg-purple-50 p-4 rounded-xl border border-purple-100">
+                <input type="checkbox" checked={publicNoticeForm.isPinned} onChange={e => setPublicNoticeForm({...publicNoticeForm, isPinned: e.target.checked})} className="w-5 h-5 text-[#7B2FBE] rounded" />
+                <span className="font-bold text-purple-900">Noticia Destacada (Aparecerá primero)</span>
+              </label>
+              <button type="submit" className="w-full bg-[#7B2FBE] hover:bg-[#5C1FA0] text-white font-bold py-3.5 rounded-xl">Publicar al Sitio Web</button>
             </form>
           </div>
         </div>
