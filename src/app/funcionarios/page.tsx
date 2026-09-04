@@ -183,10 +183,13 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
     const tasksQ = query(collection(db, "gestion_tasks"));
     const unsubTasks = onSnapshot(tasksQ, snap => {
       const assignedItems: Record<string, any>[] = [];
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
       snap.docs.forEach(d => {
         const card = { id: d.id, ...d.data() } as any;
 
-        // Excluir tarjetas eliminadas/archivadas (defensive: cualquier señal de borrado)
+        // Excluir tarjetas eliminadas/archivadas
         if (
           card.isDeleted === true ||
           card.deleted === true ||
@@ -199,20 +202,27 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
         const checklists: any[] = card.checklists || [];
         checklists.forEach((cl: any) => {
           (cl.items || []).forEach((item: any) => {
-            if (item.assignedTo === user.email && !item.isCompleted) {
-              assignedItems.push({
-                id: item.id,
-                title: item.text,
-                cardTitle: card.title,
-                checklistTitle: cl.title,
-                cardId: card.id,
-                projectId: card.projectId,
-                boardId: card.boardId,
-                expiresAt: item.expiresAt,
-                isUrgent: card.isUrgent,
-                status: "pendiente",
-              });
+            if (item.assignedTo !== user.email) return;
+            if (item.isCompleted === true) return;
+
+            // Excluir ítems cuya fecha de expiración pasó hace más de 30 días (datos abandonados)
+            if (item.expiresAt) {
+              const expDate = new Date(item.expiresAt);
+              if (expDate < thirtyDaysAgo) return;
             }
+
+            assignedItems.push({
+              id: item.id,
+              title: item.text,
+              cardTitle: card.title,
+              checklistTitle: cl.title,
+              cardId: card.id,
+              projectId: card.projectId,
+              boardId: card.boardId,
+              expiresAt: item.expiresAt,
+              isUrgent: card.isUrgent,
+              status: "pendiente",
+            });
           });
         });
       });
