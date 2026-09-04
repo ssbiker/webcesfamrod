@@ -973,7 +973,12 @@ export default function FuncionariosPortal() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let offlineCleanup: (() => void) | null = null;
+
     const unsub = onAuthStateChanged(auth, async currentUser => {
+      // Limpiar listener anterior si existía
+      if (offlineCleanup) { offlineCleanup(); offlineCleanup = null; }
+
       if (currentUser) {
         setUser(currentUser);
         const userRef = doc(db, "users", currentUser.uid);
@@ -983,11 +988,11 @@ export default function FuncionariosPortal() {
           const data = userSnap.data();
           setUserRole(data.role || "funcionario");
           // Actualizar presencia: en línea, último acceso e incrementar contador
-          await updateDoc(userRef, {
+          updateDoc(userRef, {
             isOnline: true,
             lastLogin: Timestamp.now(),
             loginCount: (data.loginCount || 0) + 1,
-          });
+          }).catch(() => {});
         } else {
           const isMasterAdmin = currentUser.email === "ssanchez@cmvalparaiso.cl";
           const newRole = isMasterAdmin ? "admin" : "funcionario";
@@ -1008,16 +1013,13 @@ export default function FuncionariosPortal() {
 
         // Marcar offline al cerrar el navegador/pestaña
         const markOffline = () => {
-          navigator.sendBeacon(
-            `https://firestore.googleapis.com/v1/projects/landing-cesfamrod/databases/(default)/documents/users/${currentUser.uid}`,
-          );
           updateDoc(doc(db, "users", currentUser.uid), { isOnline: false }).catch(() => {});
         };
         window.addEventListener("beforeunload", markOffline);
-        return () => window.removeEventListener("beforeunload", markOffline);
+        offlineCleanup = () => window.removeEventListener("beforeunload", markOffline);
 
       } else {
-        // Usuario cerró sesión — marcar offline al usuario anterior
+        // Usuario cerró sesión — marcar offline
         setUser(prev => {
           if (prev) {
             updateDoc(doc(db, "users", prev.uid), { isOnline: false }).catch(() => {});
@@ -1026,9 +1028,12 @@ export default function FuncionariosPortal() {
         });
         setUserRole("funcionario");
       }
+
+      // SIEMPRE desactivar el loading al final
       setLoading(false);
     });
-    return () => unsub();
+
+    return () => { unsub(); if (offlineCleanup) offlineCleanup(); };
   }, []);
 
   if (loading) return <div className="min-h-screen bg-[#0F0F1E] flex flex-col items-center justify-center gap-4"><div className="w-16 h-16 relative"><Image src="/logo.png" alt="Cargando" fill sizes="64px" className="object-contain animate-pulse" /></div><p className="text-white/40 text-sm font-medium">Validando acceso...</p></div>;
