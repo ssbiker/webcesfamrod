@@ -179,13 +179,36 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
     let unsubUsers = () => {};
     if (isAdmin) unsubUsers = onSnapshot(collection(db, "users"), snap => setUsersList(snap.docs.map(d => ({ uid: d.id, ...d.data() }))));
 
-    // Tareas asignadas al usuario actual desde el módulo de Gestión
+    // Tareas asignadas al usuario — busca en ítems de checklists dentro de gestion_tasks
     const tasksQ = query(
       collection(db, "gestion_tasks"),
-      where("assignedTo", "==", user.email)
+      where("isDeleted", "==", false)
     );
     const unsubTasks = onSnapshot(tasksQ, snap => {
-      setMyTasks(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      // Extraer ítems de checklist asignados al email del usuario actual
+      const assignedItems: Record<string, any>[] = [];
+      snap.docs.forEach(d => {
+        const card = { id: d.id, ...d.data() } as any;
+        const checklists: any[] = card.checklists || [];
+        checklists.forEach((cl: any) => {
+          (cl.items || []).forEach((item: any) => {
+            if (item.assignedTo === user.email && !item.isCompleted) {
+              assignedItems.push({
+                id: item.id,
+                title: item.text,               // el texto del ítem
+                cardTitle: card.title,          // título de la tarjeta padre
+                checklistTitle: cl.title,       // título del checklist
+                cardId: card.id,
+                projectId: card.projectId,
+                expiresAt: item.expiresAt,
+                isUrgent: card.isUrgent,
+                status: "pendiente",
+              });
+            }
+          });
+        });
+      });
+      setMyTasks(assignedItems);
     }, () => {
       // Si hay error de permisos, simplemente ignorar
     });
@@ -340,24 +363,24 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                       ) : (
                         <div className="divide-y divide-gray-50">
                           {myTasks.map(task => {
-                            const isDone = task.status === "completado" || task.status === "done" || task.status === "completed";
-                            const isUrgent = task.priority === "alta" || task.priority === "urgente" || task.priority === "high";
-                            const dueDate = task.dueDate?.toDate ? task.dueDate.toDate() : task.dueDate ? new Date(task.dueDate) : null;
-                            const isOverdue = dueDate && dueDate < new Date() && !isDone;
+                            const expiry = task.expiresAt ? new Date(task.expiresAt) : null;
+                            const isOverdue = expiry && expiry < new Date();
                             return (
-                              <div key={task.id} className={`px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors ${isDone ? "opacity-50" : ""}`}>
-                                <div className={`mt-0.5 w-2.5 h-2.5 rounded-full shrink-0 ${isDone ? "bg-green-400" : isOverdue ? "bg-red-500" : isUrgent ? "bg-amber-500" : "bg-[#7B2FBE]"}`} />
+                              <div key={task.id} className="px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors">
+                                <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${isOverdue ? "bg-red-500" : task.isUrgent ? "bg-amber-500" : "bg-[#7B2FBE]"}`} />
                                 <div className="flex-1 min-w-0">
-                                  <p className={`text-sm font-bold text-[#1A1A2E] truncate ${isDone ? "line-through" : ""}`}>{task.title || task.name || "Sin título"}</p>
-                                  {task.description && <p className="text-xs text-gray-400 truncate mt-0.5">{task.description}</p>}
-                                  <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                    {task.status && (
-                                      <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full ${isDone ? "bg-green-100 text-green-700" : "bg-purple-100 text-[#7B2FBE]"}`}>
-                                        {task.status}
-                                      </span>
-                                    )}
+                                  {/* Texto del ítem de checklist */}
+                                  <p className="text-sm font-bold text-[#1A1A2E] leading-tight">{task.title}</p>
+                                  {/* Tarjeta y checklist padre */}
+                                  <p className="text-[11px] text-gray-400 mt-0.5 truncate">
+                                    <span className="font-semibold text-[#7B2FBE]/70">{task.cardTitle}</span>
+                                    {task.checklistTitle && <span className="text-gray-300"> › {task.checklistTitle}</span>}
+                                  </p>
+                                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-[#7B2FBE]">pendiente</span>
+                                    {task.isUrgent && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Urgente</span>}
                                     {isOverdue && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">Vencida</span>}
-                                    {dueDate && !isOverdue && <span className="text-[9px] text-gray-400 font-bold">{dueDate.toLocaleDateString("es-CL")}</span>}
+                                    {expiry && !isOverdue && <span className="text-[9px] text-gray-400 font-bold">Vence: {expiry.toLocaleDateString("es-CL")}</span>}
                                   </div>
                                 </div>
                               </div>
