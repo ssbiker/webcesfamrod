@@ -25,7 +25,7 @@ import {
   FileIcon, ChevronLeft, CalendarDays, Megaphone, ListTodo, Layers, Pill
 } from "lucide-react";
 
-/* â”€â”€â”€ Helpers: Smart Parsing Google Drive â”€â”€â”€ */
+/* ─── Helpers: Smart Parsing Google Drive ─── */
 function parseDriveUrl(url: string) {
   if (!url) return "";
   if (url.includes('/embed') || url.includes('/preview') || url.includes('/pubhtml') || url.includes('/pub')) return url;
@@ -50,12 +50,12 @@ function getIconProps(url: string) {
   if (url.includes('spreadsheets')) return { icon: FileSpreadsheet, color: '#0F9D58', label: 'Excel' };
   if (url.includes('document')) return { icon: FileText, color: '#4285F4', label: 'Word' };
   if (url.includes('folders')) return { icon: FolderOpen, color: '#5F6368', label: 'Carpeta' };
-  if (url.includes('presentation')) return { icon: FileIcon, color: '#F4B400', label: 'PresentaciÃ³n' };
+  if (url.includes('presentation')) return { icon: FileIcon, color: '#F4B400', label: 'Presentación' };
   return { icon: FileText, color: '#7B2FBE', label: 'Documento' };
 }
 
-/* â”€â”€â”€ Helpers: Calendario â”€â”€â”€ */
-const DAYS_OF_WEEK = ["Lun", "Mar", "MiÃ©", "Jue", "Vie", "SÃ¡b", "Dom"];
+/* ─── Helpers: Calendario ─── */
+const DAYS_OF_WEEK = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 const MONTHS = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
 
 function getDaysInMonth(year: number, month: number) {
@@ -71,7 +71,7 @@ function formatDateKey(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-/* â”€â”€â”€ Login Screen â”€â”€â”€ */
+/* ─── Login Screen ─── */
 function LoginScreen({ onLogin }: { onLogin: (e: string, p: string) => Promise<void> }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -82,7 +82,7 @@ function LoginScreen({ onLogin }: { onLogin: (e: string, p: string) => Promise<v
     e.preventDefault();
     setLoading(true); setError("");
     try { await onLogin(email, password); } 
-    catch { setError("Credenciales incorrectas. Verifica tu correo y contraseÃ±a."); } 
+    catch { setError("Credenciales incorrectas. Verifica tu correo y contraseña."); } 
     finally { setLoading(false); }
   };
 
@@ -107,7 +107,7 @@ function LoginScreen({ onLogin }: { onLogin: (e: string, p: string) => Promise<v
             <div>
               <div className="relative">
                 <Lock className="w-4 h-4 text-white/30 absolute left-4 top-1/2 -translate-y-1/2" />
-                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="ContraseÃ±a" required className="w-full bg-white/5 border border-white/10 text-white placeholder-white/20 rounded-xl pl-11 pr-4 py-3 text-sm focus:border-[#7B2FBE] transition-all outline-none" />
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Contraseña" required className="w-full bg-white/5 border border-white/10 text-white placeholder-white/20 rounded-xl pl-11 pr-4 py-3 text-sm focus:border-[#7B2FBE] transition-all outline-none" />
               </div>
             </div>
             <button type="submit" disabled={loading} className="w-full mt-2 bg-[#7B2FBE] hover:bg-[#5C1FA0] text-white font-bold py-3.5 rounded-xl transition-all hover:scale-[1.02] disabled:opacity-60 shadow-lg">
@@ -116,7 +116,7 @@ function LoginScreen({ onLogin }: { onLogin: (e: string, p: string) => Promise<v
           </form>
           <div className="mt-6 text-center">
             <Link href="/" className="text-sm text-white/30 hover:text-white/60 transition-colors flex items-center justify-center gap-2">
-              <Home className="w-3.5 h-3.5" /> Volver al sitio pÃºblico
+              <Home className="w-3.5 h-3.5" /> Volver al sitio público
             </Link>
           </div>
         </div>
@@ -125,7 +125,7 @@ function LoginScreen({ onLogin }: { onLogin: (e: string, p: string) => Promise<v
   );
 }
 
-/* â”€â”€â”€ Dashboard â”€â”€â”€ */
+/* ─── Dashboard ─── */
 function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string; onLogout: () => void }) {
   const isAdmin = userRole === "admin" || userRole === "moderator";
   const [activeTab, setActiveTab] = useState<"avisos" | "calendario" | "documentos" | "usuarios" | "noticias_publicas">("avisos");
@@ -181,7 +181,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
     let unsubUsers = () => {};
     if (isAdmin) unsubUsers = onSnapshot(collection(db, "users"), snap => setUsersList(snap.docs.map(d => ({ uid: d.id, ...d.data() }))));
 
-    // Tareas asignadas al usuario â€” busca en Ã­tems de checklists dentro de gestion_tasks
+    // Tareas asignadas al usuario — busca en ítems de checklists dentro de gestion_tasks
     const tasksQ = query(collection(db, "gestion_tasks"));
     const unsubTasks = onSnapshot(tasksQ, snap => {
       const assignedItems: Record<string, any>[] = [];
@@ -207,7 +207,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
             if (item.assignedTo !== user.email) return;
             if (item.isCompleted === true) return;
 
-            // Excluir Ã­tems cuya fecha de expiraciÃ³n pasÃ³ hace mÃ¡s de 30 dÃ­as (datos abandonados)
+            // Excluir ítems cuya fecha de expiración pasó hace más de 30 días (datos abandonados)
             if (item.expiresAt) {
               const expDate = new Date(item.expiresAt);
               if (expDate < thirtyDaysAgo) return;
@@ -233,7 +233,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
       // Si hay error de permisos, ignorar
     });
 
-    // Recetas Controladas asignadas al mÃ©dico actual
+    // Recetas Controladas asignadas al médico actual
     const recetasQ = query(
       collection(db, "recetas_controladas"),
       where("medicoUid", "==", user.uid),
@@ -246,7 +246,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
       setMyRecetas(pendientes);
     }, () => {});
 
-    // Recetas CrÃ³nicas asignadas al mÃ©dico actual
+    // Recetas Crónicas asignadas al médico actual
     const cronicasQ = query(
       collection(db, "recetas_cronicas"),
       where("medicoUid", "==", user.uid),
@@ -262,7 +262,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
     return () => { unsubDocs(); unsubNotices(); unsubKanbanNotices(); unsubBoards(); unsubEvents(); unsubPublicNews(); unsubUsers(); unsubTasks(); unsubRecetas(); unsubCronicas(); };
   }, [isAdmin]);
 
-  /* â”€â”€â”€ Acciones CRUD â”€â”€â”€ */
+  /* ─── Acciones CRUD ─── */
   const handleAddDocument = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!docForm.title || !docForm.url) return;
@@ -292,7 +292,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
   };
 
   const handleDelete = async (coll: string, id: string) => {
-    if(confirm("Â¿Eliminar este elemento?")) await deleteDoc(doc(db, coll, id));
+    if(confirm("¿Eliminar este elemento?")) await deleteDoc(doc(db, coll, id));
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -303,12 +303,12 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
       const res = await createUserWithEmailAndPassword(getAuth(secondaryApp), userForm.email, userForm.password);
       await setDoc(doc(db, "users", res.user.uid), { email: res.user.email, name: userForm.name, role: userForm.role, isGenericAccount: false, hasGestionAccess: false, loginCount: 0, isOnline: false, createdAt: Timestamp.now() });
       await getAuth(secondaryApp).signOut();
-      setUserFormStatus("Â¡Usuario creado exitosamente!");
+      setUserFormStatus("¡Usuario creado exitosamente!");
       setTimeout(() => { setShowUserModal(false); setUserFormStatus(""); setUserForm({ email: "", password: "", name: "", role: "funcionario" }); }, 1500);
     } catch (err: any) { setUserFormStatus("Error: " + err.message); }
   };
 
-  /* â”€â”€â”€ Render Helpers â”€â”€â”€ */
+  /* ─── Render Helpers ─── */
   const renderCalendar = () => {
     const daysInMonth = getDaysInMonth(currentYear, currentMonth);
     const firstDay = getFirstDayOfMonth(currentYear, currentMonth);
@@ -355,7 +355,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f1eaff] via-[#e8f2ff] to-[#e0f7fa] flex flex-col">
-      {/* â”€â”€â”€ HEADER Y TABS â”€â”€â”€ */}
+      {/* ─── HEADER Y TABS ─── */}
       <header className="bg-white/60 backdrop-blur-2xl border-b border-white/60 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-3 border-b border-white/40">
           <div className="flex items-center gap-3 shrink-0">
@@ -405,16 +405,16 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
 
                     <div className="max-h-96 overflow-y-auto">
 
-                      {/* â”€â”€ SecciÃ³n Tareas GestiÃ³n â”€â”€ */}
+                      {/* ── Sección Tareas Gestión ── */}
                       <div className="px-4 pt-3 pb-1">
                         <div className="flex items-center gap-2 mb-2">
                           <Layers className="w-3.5 h-3.5 text-amber-600" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Tareas GestiÃ³n</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Tareas Gestión</span>
                           <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{myTasks.length}</span>
                         </div>
                       </div>
                       {myTasks.length === 0 ? (
-                        <div className="px-4 pb-3 text-xs text-gray-400 font-medium">Sin tareas pendientes âœ…</div>
+                        <div className="px-4 pb-3 text-xs text-gray-400 font-medium">Sin tareas pendientes ✅</div>
                       ) : (
                         <div className="divide-y divide-gray-50">
                           {myTasks.map(task => {
@@ -427,7 +427,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                                   <p className="text-sm font-bold text-[#1A1A2E] leading-tight">{task.title}</p>
                                   <p className="text-[11px] text-gray-400 mt-0.5 truncate">
                                     <span className="font-semibold text-[#7B2FBE]/70">{task.cardTitle}</span>
-                                    {task.checklistTitle && <span className="text-gray-300"> â€º {task.checklistTitle}</span>}
+                                    {task.checklistTitle && <span className="text-gray-300"> › {task.checklistTitle}</span>}
                                   </p>
                                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                                     {task.isUrgent && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Urgente</span>}
@@ -489,7 +489,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                     <div className="px-4 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-2">
                       <a href="https://gestion-rodelillo.web.app/" target="_blank" rel="noopener noreferrer"
                         className="flex items-center gap-1.5 text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors">
-                        <Layers className="w-3 h-3" /> GestiÃ³n <ChevronRight className="w-3 h-3" />
+                        <Layers className="w-3 h-3" /> Gestión <ChevronRight className="w-3 h-3" />
                       </a>
                       <a href="/funcionarios/farmacia"
                         className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
@@ -502,12 +502,12 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
               )}
             </div>
 
-            {/* Web PÃºblica */}
+            {/* Web Pública */}
             <a
               href="/"
               className="hidden sm:flex items-center gap-1.5 text-xs text-[#7B2FBE] hover:text-[#5C1FA0] bg-purple-50 px-2.5 py-1.5 rounded-lg font-bold transition-colors border border-purple-100 shadow-sm"
             >
-              <ExternalLink className="w-3.5 h-3.5" /> Web PÃºblica
+              <ExternalLink className="w-3.5 h-3.5" /> Web Pública
             </a>
 
             {/* User info + logout */}
@@ -521,13 +521,13 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
               </div>
             </div>
 
-            <button title="Cerrar sesiÃ³n" onClick={onLogout} className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+            <button title="Cerrar sesión" onClick={onLogout} className="p-1.5 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
               <LogOut className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* â”€â”€â”€ TABS â”€â”€â”€ */}
+        {/* ─── TABS ─── */}
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center gap-1 overflow-x-auto hide-scrollbar py-1.5">
             <button onClick={() => setActiveTab("avisos")} className={`relative shrink-0 px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'avisos' ? 'bg-[#7B2FBE] text-white shadow-sm' : 'text-gray-600 hover:text-[#7B2FBE] hover:bg-purple-50'}`}>
@@ -543,7 +543,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
             {isAdmin && (
               <>
                 <button onClick={() => setActiveTab("noticias_publicas")} className={`shrink-0 px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'noticias_publicas' ? 'bg-[#7B2FBE] text-white shadow-sm' : 'text-gray-600 hover:text-[#7B2FBE] hover:bg-purple-50'}`}>
-                  <Megaphone className="w-4 h-4" /> Web PÃºblica
+                  <Megaphone className="w-4 h-4" /> Web Pública
                 </button>
                 <button onClick={() => setActiveTab("usuarios")} className={`shrink-0 px-4 py-1.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === 'usuarios' ? 'bg-[#7B2FBE] text-white shadow-sm' : 'text-gray-600 hover:text-[#7B2FBE] hover:bg-purple-50'}`}>
                   <Users className="w-4 h-4" /> Usuarios
@@ -554,17 +554,17 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
             {/* Separador */}
             <div className="w-px h-5 bg-gray-200 mx-1 shrink-0" />
 
-            {/* BotÃ³n GestiÃ³n */}
+            {/* Botón Gestión */}
             <a
               href="https://gestion-rodelillo.web.app/"
               target="_blank"
               rel="noopener noreferrer"
               className="shrink-0 inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-black bg-amber-400/20 text-amber-700 hover:bg-amber-400/30 transition-all border border-amber-300/50"
             >
-              <Layers className="w-4 h-4" />GestiÃ³n
+              <Layers className="w-4 h-4" />Gestión
             </a>
 
-            {/* BotÃ³n Farmacia */}
+            {/* Botón Farmacia */}
             <a
               href="/funcionarios/farmacia"
               className="shrink-0 inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-black bg-emerald-400/20 text-emerald-700 hover:bg-emerald-400/30 transition-all border border-emerald-300/50"
@@ -577,7 +577,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         
-        {/* â”€â”€â”€ PESTAÃ‘A AVISOS â”€â”€â”€ */}
+        {/* ─── PESTAÑA AVISOS ─── */}
         {activeTab === "avisos" && (
           <div className="animate-fade-in">
             <AvisosKanban
@@ -590,7 +590,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
           </div>
         )}
 
-        {/* â”€â”€â”€ PESTAÃ‘A CALENDARIO â”€â”€â”€ */}
+        {/* ─── PESTAÑA CALENDARIO ─── */}
         {activeTab === "calendario" && (
           <div className="grid lg:grid-cols-12 gap-8 animate-fade-in">
             <div className="lg:col-span-8 space-y-6">
@@ -614,7 +614,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                 <div className="grid grid-cols-7 gap-1 md:gap-2">
                   {renderCalendar()}
                 </div>
-                {isAdmin && <p className="text-[10px] text-gray-400 mt-4 text-center">Haz clic en cualquier dÃ­a para agendar un evento o actividad.</p>}
+                {isAdmin && <p className="text-[10px] text-gray-400 mt-4 text-center">Haz clic en cualquier día para agendar un evento o actividad.</p>}
               </div>
             </div>
 
@@ -623,12 +623,12 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
               <div className="bg-gradient-to-r from-[#1A1A2E] to-[#2D1B69] rounded-3xl p-6 text-white shadow-xl">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-bold text-lg mb-1">ðŸš¨ Horario SAPU</h3>
-                    <p className="text-white/60 text-sm">AtenciÃ³n Primaria de Urgencia</p>
+                    <h3 className="font-bold text-lg mb-1">🚨 Horario SAPU</h3>
+                    <p className="text-white/60 text-sm">Atención Primaria de Urgencia</p>
                   </div>
                 </div>
                 <div className="bg-white/10 rounded-2xl p-4 text-center">
-                  <div className="text-[#F5C518] font-black text-2xl mb-1">17:00 â€“ 00:00</div>
+                  <div className="text-[#F5C518] font-black text-2xl mb-1">17:00 – 00:00</div>
                   <div className="text-white/80 text-sm font-medium">Lunes a Viernes</div>
                 </div>
               </div>
@@ -636,7 +636,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
           </div>
         )}
 
-        {/* â”€â”€â”€ PESTAÃ‘A DOCUMENTOS â”€â”€â”€ */}
+        {/* ─── PESTAÑA DOCUMENTOS ─── */}
         {activeTab === "documentos" && (
           <div className="animate-fade-in">
             <div className="flex items-center justify-between mb-8">
@@ -653,7 +653,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
 
             <div className="relative max-w-xl mb-8">
               <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
-              <input type="text" placeholder="Buscar por tÃ­tulo o descripciÃ³n..." value={searchDocQuery} onChange={e => setSearchDocQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:border-[#7B2FBE] focus:ring-2 focus:ring-purple-100 outline-none transition-all" />
+              <input type="text" placeholder="Buscar por título o descripción..." value={searchDocQuery} onChange={e => setSearchDocQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:border-[#7B2FBE] focus:ring-2 focus:ring-purple-100 outline-none transition-all" />
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -684,14 +684,14 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
         )}
 
 
-        {/* â”€â”€â”€ PESTAÃ‘A USUARIOS â”€â”€â”€ */}
+        {/* ─── PESTAÑA USUARIOS ─── */}
         {activeTab === "usuarios" && isAdmin && (
           <div className="space-y-6 animate-fade-in">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-100 rounded-2xl p-4">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
-                  <span className="text-xs font-bold text-green-700 uppercase tracking-wider">En lÃ­nea</span>
+                  <span className="text-xs font-bold text-green-700 uppercase tracking-wider">En línea</span>
                 </div>
                 <div className="text-3xl font-black text-green-700">{usersList.filter(u => u.isOnline).length}</div>
                 <div className="text-xs text-green-600 mt-1">conectados ahora</div>
@@ -730,7 +730,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="flex bg-gray-50 rounded-xl p-1 border border-gray-100">
-                    {["Todos", "En LÃ­nea", "Frecuentes", "Sin ConexiÃ³n"].map(filter => (
+                    {["Todos", "En Línea", "Frecuentes", "Sin Conexión"].map(filter => (
                       <button 
                         key={filter} 
                         onClick={() => setUserFilter(filter)}
@@ -758,9 +758,9 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                   </thead>
                   <tbody className="text-sm">
                     {usersList.filter(u => {
-                      if (userFilter === "En LÃ­nea") return u.isOnline;
+                      if (userFilter === "En Línea") return u.isOnline;
                       if (userFilter === "Frecuentes") return (u.loginCount || 0) >= 5;
-                      if (userFilter === "Sin ConexiÃ³n") return !u.isOnline;
+                      if (userFilter === "Sin Conexión") return !u.isOnline;
                       return true;
                     }).map(u => (
                       <tr key={u.uid} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
@@ -776,7 +776,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                           >
                             <option value="admin">Administrador</option>
                             <option value="moderator">Moderador</option>
-                            <option value="medico">MÃ©dico</option>
+                            <option value="medico">Médico</option>
                             <option value="funcionario">Funcionario</option>
                           </select>
                           <div className="mt-2 text-xs flex flex-col gap-1.5">
@@ -787,7 +787,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                                 onChange={(e) => updateDoc(doc(db, "users", u.uid), { isGenericAccount: e.target.checked })}
                                 className="w-3.5 h-3.5 text-[#7B2FBE] rounded" 
                               />
-                              <span className="text-gray-500 font-bold">Cuenta GenÃ©rica</span>
+                              <span className="text-gray-500 font-bold">Cuenta Genérica</span>
                             </label>
                             <label className="flex items-center gap-1.5 cursor-pointer">
                               <input 
@@ -796,12 +796,12 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                                 onChange={(e) => updateDoc(doc(db, "users", u.uid), { hasGestionAccess: e.target.checked })}
                                 className="w-3.5 h-3.5 text-blue-600 rounded" 
                               />
-                              <span className="text-gray-500 font-bold">Tablero GestiÃ³n</span>
+                              <span className="text-gray-500 font-bold">Tablero Gestión</span>
                             </label>
-                            {/* Farmacia: los mÃ©dicos tienen acceso por rol, la casilla es para otros perfiles */}
+                            {/* Farmacia: los médicos tienen acceso por rol, la casilla es para otros perfiles */}
                             {u.role === "medico" ? (
                               <div className="flex items-center gap-1.5 text-emerald-600">
-                                <span className="text-sm">ðŸ’Š</span>
+                                <span className="text-sm">💊</span>
                                 <span className="font-black text-[11px]">Farmacia (por rol)</span>
                               </div>
                             ) : (
@@ -812,7 +812,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                                   onChange={(e) => updateDoc(doc(db, "users", u.uid), { hasFarmaciaAccess: e.target.checked })}
                                   className="w-3.5 h-3.5 text-emerald-600 rounded" 
                                 />
-                                <span className="text-emerald-700 font-bold">ðŸ’Š Acceso Farmacia</span>
+                                <span className="text-emerald-700 font-bold">💊 Acceso Farmacia</span>
                               </label>
                             )}
                           </div>
@@ -821,22 +821,22 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                           <div className="flex flex-col gap-1.5">
                             <div className={`flex items-center gap-1.5 text-xs font-bold ${u.isOnline ? 'text-green-600' : 'text-gray-400'}`}>
                               <div className={`w-2.5 h-2.5 rounded-full ${u.isOnline ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-                              {u.isOnline ? 'En lÃ­nea' : 'Desconectado'}
+                              {u.isOnline ? 'En línea' : 'Desconectado'}
                             </div>
                             <div className="text-xs text-gray-500 flex items-center gap-2">
                               Accesos Totales: <strong className="text-[#1A1A2E]">{u.loginCount || 0}</strong>
                             </div>
                             <div className="text-xs text-gray-500 flex items-center gap-2">
-                              Ãšltima vez: <span>{u.lastLogin ? u.lastLogin.toDate().toLocaleDateString('es-CL') : 'Nunca'}</span>
+                              Última vez: <span>{u.lastLogin ? u.lastLogin.toDate().toLocaleDateString('es-CL') : 'Nunca'}</span>
                             </div>
                           </div>
                         </td>
                         <td className="py-4 px-6 text-center">
                           <div className="flex items-center justify-center gap-2">
-                            <button onClick={() => alert("FunciÃ³n para editar nombre en desarrollo...")} title="Editar Nombre" className="p-2 rounded-lg bg-gray-50 text-gray-400 hover:text-[#7B2FBE] hover:bg-purple-50 transition-colors border border-gray-100">
+                            <button onClick={() => alert("Función para editar nombre en desarrollo...")} title="Editar Nombre" className="p-2 rounded-lg bg-gray-50 text-gray-400 hover:text-[#7B2FBE] hover:bg-purple-50 transition-colors border border-gray-100">
                               <Settings className="w-4 h-4" />
                             </button>
-                            <button onClick={() => alert("Restablecer contraseÃ±a enviarÃ¡ un email. FunciÃ³n en desarrollo...")} title="Restablecer ContraseÃ±a" className="text-xs font-bold bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-2 rounded-lg transition-colors border border-blue-100">
+                            <button onClick={() => alert("Restablecer contraseña enviará un email. Función en desarrollo...")} title="Restablecer Contraseña" className="text-xs font-bold bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white px-3 py-2 rounded-lg transition-colors border border-blue-100">
                               Reset Pass
                             </button>
                             <button onClick={() => handleDelete("users", u.uid)} title="Eliminar Usuario" className="p-2 rounded-lg bg-gray-50 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors border border-gray-100">
@@ -852,13 +852,13 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
             </div>
           </div>
         )}
-        {/* â”€â”€â”€ PESTAÃ‘A NOTICIAS PÃšBLICAS â”€â”€â”€ */}
+        {/* ─── PESTAÑA NOTICIAS PÚBLICAS ─── */}
         {activeTab === "noticias_publicas" && isAdmin && (
           <div className="animate-fade-in">
             <div className="flex items-center justify-between mb-8">
               <div>
-                <h2 className="text-2xl font-black font-heading text-[#1A1A2E]">Noticias Sitio PÃºblico</h2>
-                <p className="text-sm text-gray-500 mt-1">Lo que publiques aquÃ­ aparecerÃ¡ directamente a los pacientes en la pÃ¡gina principal.</p>
+                <h2 className="text-2xl font-black font-heading text-[#1A1A2E]">Noticias Sitio Público</h2>
+                <p className="text-sm text-gray-500 mt-1">Lo que publiques aquí aparecerá directamente a los pacientes en la página principal.</p>
               </div>
               <button onClick={() => setShowPublicNoticeModal(true)} className="flex items-center gap-1.5 text-sm font-bold text-white bg-[#7B2FBE] hover:bg-[#5C1FA0] px-5 py-2.5 rounded-xl transition-all shadow-md">
                 <Plus className="w-5 h-5" /> Nueva Noticia
@@ -866,7 +866,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {publicNews.length === 0 && <div className="col-span-full py-12 text-center text-gray-400 bg-white rounded-3xl border border-gray-100">No hay noticias pÃºblicas publicadas.</div>}
+              {publicNews.length === 0 && <div className="col-span-full py-12 text-center text-gray-400 bg-white rounded-3xl border border-gray-100">No hay noticias públicas publicadas.</div>}
               {publicNews.map(news => (
                 <div key={news.id} className="bg-white border rounded-3xl p-6 hover:shadow-xl transition-all relative group flex flex-col border-[#7B2FBE]/30 shadow-[0_4px_20px_rgba(123,47,190,0.1)]">
                   <button onClick={() => handleDelete("public_news", news.id)} className="absolute z-10 top-4 right-4 bg-white/80 backdrop-blur p-1.5 rounded-full text-gray-400 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all shadow-sm">
@@ -901,7 +901,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
         )}
       </main>
 
-      {/* â”€â”€â”€ THEATER MODE â”€â”€â”€ */}
+      {/* ─── THEATER MODE ─── */}
       {fullScreenDoc && (
         <div className="fixed inset-0 z-[100] flex flex-col bg-black/95 backdrop-blur-xl animate-fade-in">
           <div className="h-16 border-b border-white/10 flex items-center justify-between px-6 shrink-0">
@@ -926,7 +926,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
         </div>
       )}
 
-      {/* â”€â”€â”€ MODALES DE FORMULARIOS â”€â”€â”€ */}
+      {/* ─── MODALES DE FORMULARIOS ─── */}
       {showDocModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl animate-fade-up">
@@ -935,8 +935,8 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
               <button onClick={() => setShowDocModal(false)}><X className="w-6 h-6 text-gray-400 hover:text-red-500" /></button>
             </div>
             <form onSubmit={handleAddDocument} className="space-y-5">
-              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">TÃ­tulo</label><input type="text" required value={docForm.title} onChange={e => setDocForm({...docForm, title: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" /></div>
-              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">DescripciÃ³n (Opcional)</label><input type="text" value={docForm.description} onChange={e => setDocForm({...docForm, description: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" /></div>
+              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Título</label><input type="text" required value={docForm.title} onChange={e => setDocForm({...docForm, title: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" /></div>
+              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Descripción (Opcional)</label><input type="text" value={docForm.description} onChange={e => setDocForm({...docForm, description: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" /></div>
               <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Enlace Compartido</label><input type="url" required value={docForm.url} onChange={e => setDocForm({...docForm, url: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" /></div>
               <button type="submit" className="w-full bg-[#7B2FBE] hover:bg-[#5C1FA0] text-white font-bold py-3.5 rounded-xl mt-4">Guardar Documento</button>
             </form>
@@ -973,9 +973,9 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
               <h3 className="text-xl font-black font-heading text-[#1A1A2E]">Agendar Evento</h3>
               <button onClick={() => setShowEventModal(false)}><X className="w-6 h-6 text-gray-400 hover:text-red-500" /></button>
             </div>
-            <p className="text-sm font-bold text-[#7B2FBE] bg-purple-50 px-4 py-2 rounded-lg mb-6 text-center">Para el dÃ­a: {selectedDateKey}</p>
+            <p className="text-sm font-bold text-[#7B2FBE] bg-purple-50 px-4 py-2 rounded-lg mb-6 text-center">Para el día: {selectedDateKey}</p>
             <form onSubmit={handleAddEvent} className="space-y-5">
-              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">TÃ­tulo del Evento</label><input type="text" required value={eventForm.title} onChange={e => setEventForm({...eventForm, title: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" placeholder="Ej: CapacitaciÃ³n MINSAL" /></div>
+              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Título del Evento</label><input type="text" required value={eventForm.title} onChange={e => setEventForm({...eventForm, title: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" placeholder="Ej: Capacitación MINSAL" /></div>
               <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Hora (Opcional)</label><input type="time" value={eventForm.time} onChange={e => setEventForm({...eventForm, time: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" /></div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Color Etiqueta</label>
@@ -1000,19 +1000,19 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
             </div>
             {userFormStatus && <div className="mb-6 text-center text-sm font-bold text-[#7B2FBE] bg-purple-50 py-3 rounded-xl">{userFormStatus}</div>}
             <form onSubmit={handleCreateUser} className="space-y-5">
-              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Nombre Completo</label><input type="text" required value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" placeholder="Ej: Juan PÃ©rez" /></div>
-              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Correo ElectrÃ³nico</label><input type="email" required value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" /></div>
-              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">ContraseÃ±a Provisoria</label><input type="password" required value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" minLength={6} /></div>
+              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Nombre Completo</label><input type="text" required value={userForm.name} onChange={e => setUserForm({...userForm, name: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" placeholder="Ej: Juan Pérez" /></div>
+              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Correo Electrónico</label><input type="email" required value={userForm.email} onChange={e => setUserForm({...userForm, email: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" /></div>
+              <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Contraseña Provisoria</label><input type="password" required value={userForm.password} onChange={e => setUserForm({...userForm, password: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" minLength={6} /></div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Rol Inicial</label>
                 <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none font-bold">
                   <option value="funcionario">Funcionario</option>
                   <option value="moderator">Moderador</option>
-                  <option value="medico">MÃ©dico</option>
+                  <option value="medico">Médico</option>
                   <option value="admin">Administrador</option>
                 </select>
                 <p className="text-[11px] text-gray-400 mt-1.5 pl-1">
-                  <strong>Funcionario</strong>: solo lectura Â· <strong>Moderador</strong>: puede crear avisos Â· <strong>MÃ©dico</strong>: acceso a Farmacia Â· <strong>Administrador</strong>: acceso total
+                  <strong>Funcionario</strong>: solo lectura · <strong>Moderador</strong>: puede crear avisos · <strong>Médico</strong>: acceso a Farmacia · <strong>Administrador</strong>: acceso total
                 </p>
               </div>
               <button type="submit" className="w-full bg-[#7B2FBE] hover:bg-[#5C1FA0] text-white font-bold py-3.5 rounded-xl mt-4">Crear Cuenta</button>
@@ -1025,17 +1025,17 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl w-full max-w-lg p-8 shadow-2xl animate-fade-up">
             <div className="flex justify-between items-center mb-8">
-              <h3 className="text-xl font-black font-heading text-[#1A1A2E]">Nueva Noticia PÃºblica</h3>
+              <h3 className="text-xl font-black font-heading text-[#1A1A2E]">Nueva Noticia Pública</h3>
               <button onClick={() => setShowPublicNoticeModal(false)}><X className="w-6 h-6 text-gray-400 hover:text-red-500" /></button>
             </div>
             <form onSubmit={handleAddPublicNotice} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">TÃ­tulo de la Noticia</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Título de la Noticia</label>
                 <input type="text" required value={publicNoticeForm.title} onChange={e => setPublicNoticeForm({...publicNoticeForm, title: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none font-bold text-lg" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">CategorÃ­a</label>
+                  <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Categoría</label>
                   <input type="text" required value={publicNoticeForm.category} onChange={e => setPublicNoticeForm({...publicNoticeForm, category: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none" placeholder="Ej: Aviso, Salud..." />
                 </div>
                 <div>
@@ -1045,11 +1045,11 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
               </div>
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Contenido</label>
-                <textarea required rows={5} value={publicNoticeForm.content} onChange={e => setPublicNoticeForm({...publicNoticeForm, content: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none resize-none" placeholder="Escribe el anuncio pÃºblico..." />
+                <textarea required rows={5} value={publicNoticeForm.content} onChange={e => setPublicNoticeForm({...publicNoticeForm, content: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none resize-none" placeholder="Escribe el anuncio público..." />
               </div>
               <label className="flex items-center gap-3 cursor-pointer bg-purple-50 p-4 rounded-xl border border-purple-100">
                 <input type="checkbox" checked={publicNoticeForm.isPinned} onChange={e => setPublicNoticeForm({...publicNoticeForm, isPinned: e.target.checked})} className="w-5 h-5 text-[#7B2FBE] rounded" />
-                <span className="font-bold text-purple-900">Noticia Destacada (AparecerÃ¡ primero)</span>
+                <span className="font-bold text-purple-900">Noticia Destacada (Aparecerá primero)</span>
               </label>
               <button type="submit" className="w-full bg-[#7B2FBE] hover:bg-[#5C1FA0] text-white font-bold py-3.5 rounded-xl">Publicar al Sitio Web</button>
             </form>
@@ -1060,7 +1060,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
   );
 }
 
-/* â”€â”€â”€ ENRUTADOR â”€â”€â”€ */
+/* ─── ENRUTADOR ─── */
 export default function FuncionariosPortal() {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string>("funcionario");
@@ -1070,7 +1070,7 @@ export default function FuncionariosPortal() {
     let offlineCleanup: (() => void) | null = null;
 
     const unsub = onAuthStateChanged(auth, async currentUser => {
-      // Limpiar listener anterior si existÃ­a
+      // Limpiar listener anterior si existía
       if (offlineCleanup) { offlineCleanup(); offlineCleanup = null; }
 
       if (currentUser) {
@@ -1081,7 +1081,7 @@ export default function FuncionariosPortal() {
         if (userSnap.exists()) {
           const data = userSnap.data();
           setUserRole(data.role || "funcionario");
-          // Actualizar presencia: en lÃ­nea, Ãºltimo acceso e incrementar contador
+          // Actualizar presencia: en línea, último acceso e incrementar contador
           updateDoc(userRef, {
             isOnline: true,
             lastLogin: Timestamp.now(),
@@ -1105,7 +1105,7 @@ export default function FuncionariosPortal() {
           setUserRole(newRole);
         }
 
-        // Marcar offline al cerrar el navegador/pestaÃ±a
+        // Marcar offline al cerrar el navegador/pestaña
         const markOffline = () => {
           updateDoc(doc(db, "users", currentUser.uid), { isOnline: false }).catch(() => {});
         };
@@ -1113,7 +1113,7 @@ export default function FuncionariosPortal() {
         offlineCleanup = () => window.removeEventListener("beforeunload", markOffline);
 
       } else {
-        // Usuario cerrÃ³ sesiÃ³n â€” marcar offline
+        // Usuario cerró sesión — marcar offline
         setUser(prev => {
           if (prev) {
             updateDoc(doc(db, "users", prev.uid), { isOnline: false }).catch(() => {});
@@ -1134,4 +1134,3 @@ export default function FuncionariosPortal() {
   if (!user) return <LoginScreen onLogin={(e, p) => signInWithEmailAndPassword(auth, e, p).then()} />;
   return <Dashboard user={user} userRole={userRole} onLogout={() => signOut(auth)} />;
 }
-
