@@ -180,26 +180,34 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
     if (isAdmin) unsubUsers = onSnapshot(collection(db, "users"), snap => setUsersList(snap.docs.map(d => ({ uid: d.id, ...d.data() }))));
 
     // Tareas asignadas al usuario — busca en ítems de checklists dentro de gestion_tasks
-    const tasksQ = query(
-      collection(db, "gestion_tasks"),
-      where("isDeleted", "==", false)
-    );
+    const tasksQ = query(collection(db, "gestion_tasks"));
     const unsubTasks = onSnapshot(tasksQ, snap => {
-      // Extraer ítems de checklist asignados al email del usuario actual
       const assignedItems: Record<string, any>[] = [];
       snap.docs.forEach(d => {
         const card = { id: d.id, ...d.data() } as any;
+
+        // Excluir tarjetas eliminadas/archivadas (defensive: cualquier señal de borrado)
+        if (
+          card.isDeleted === true ||
+          card.deleted === true ||
+          card.archived === true ||
+          card.status === "deleted" ||
+          card.status === "archived" ||
+          card.status === "trash"
+        ) return;
+
         const checklists: any[] = card.checklists || [];
         checklists.forEach((cl: any) => {
           (cl.items || []).forEach((item: any) => {
             if (item.assignedTo === user.email && !item.isCompleted) {
               assignedItems.push({
                 id: item.id,
-                title: item.text,               // el texto del ítem
-                cardTitle: card.title,          // título de la tarjeta padre
-                checklistTitle: cl.title,       // título del checklist
+                title: item.text,
+                cardTitle: card.title,
+                checklistTitle: cl.title,
                 cardId: card.id,
                 projectId: card.projectId,
+                boardId: card.boardId,
                 expiresAt: item.expiresAt,
                 isUrgent: card.isUrgent,
                 status: "pendiente",
@@ -210,7 +218,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
       });
       setMyTasks(assignedItems);
     }, () => {
-      // Si hay error de permisos, simplemente ignorar
+      // Si hay error de permisos, ignorar
     });
 
     return () => { unsubDocs(); unsubNotices(); unsubKanbanNotices(); unsubBoards(); unsubEvents(); unsubPublicNews(); unsubUsers(); unsubTasks(); };
