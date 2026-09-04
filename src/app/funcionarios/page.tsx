@@ -692,6 +692,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                           >
                             <option value="admin">Administrador</option>
                             <option value="moderator">Moderador</option>
+                            <option value="medico">Médico</option>
                             <option value="funcionario">Funcionario</option>
                           </select>
                           <div className="mt-2 text-xs flex flex-col gap-1.5">
@@ -713,15 +714,23 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                               />
                               <span className="text-gray-500 font-bold">Tablero Gestión</span>
                             </label>
-                            <label className="flex items-center gap-1.5 cursor-pointer">
-                              <input 
-                                type="checkbox" 
-                                checked={!!u.hasFarmaciaAccess} 
-                                onChange={(e) => updateDoc(doc(db, "users", u.uid), { hasFarmaciaAccess: e.target.checked })}
-                                className="w-3.5 h-3.5 text-emerald-600 rounded" 
-                              />
-                              <span className="text-emerald-700 font-bold">💊 Acceso Farmacia</span>
-                            </label>
+                            {/* Farmacia: los médicos tienen acceso por rol, la casilla es para otros perfiles */}
+                            {u.role === "medico" ? (
+                              <div className="flex items-center gap-1.5 text-emerald-600">
+                                <span className="text-sm">💊</span>
+                                <span className="font-black text-[11px]">Farmacia (por rol)</span>
+                              </div>
+                            ) : (
+                              <label className="flex items-center gap-1.5 cursor-pointer">
+                                <input 
+                                  type="checkbox" 
+                                  checked={!!u.hasFarmaciaAccess} 
+                                  onChange={(e) => updateDoc(doc(db, "users", u.uid), { hasFarmaciaAccess: e.target.checked })}
+                                  className="w-3.5 h-3.5 text-emerald-600 rounded" 
+                                />
+                                <span className="text-emerald-700 font-bold">💊 Acceso Farmacia</span>
+                              </label>
+                            )}
                           </div>
                         </td>
                         <td className="py-4 px-6">
@@ -915,10 +924,11 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                 <select value={userForm.role} onChange={e => setUserForm({...userForm, role: e.target.value})} className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:border-[#7B2FBE] outline-none font-bold">
                   <option value="funcionario">Funcionario</option>
                   <option value="moderator">Moderador</option>
+                  <option value="medico">Médico</option>
                   <option value="admin">Administrador</option>
                 </select>
                 <p className="text-[11px] text-gray-400 mt-1.5 pl-1">
-                  <strong>Funcionario</strong>: solo lectura · <strong>Moderador</strong>: puede crear avisos · <strong>Administrador</strong>: acceso total
+                  <strong>Funcionario</strong>: solo lectura · <strong>Moderador</strong>: puede crear avisos · <strong>Médico</strong>: acceso a Farmacia · <strong>Administrador</strong>: acceso total
                 </p>
               </div>
               <button type="submit" className="w-full bg-[#7B2FBE] hover:bg-[#5C1FA0] text-white font-bold py-3.5 rounded-xl mt-4">Crear Cuenta</button>

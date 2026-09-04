@@ -16,7 +16,7 @@ export default function FarmaciaPage() {
       try {
         const snap = await getDoc(doc(db, "users", user.uid));
         const data = snap.data();
-        const allowed = data?.hasFarmaciaAccess === true || data?.role === "admin";
+        const allowed = data?.hasFarmaciaAccess === true || data?.role === "admin" || data?.role === "medico";
         setStatus(allowed ? "allowed" : "denied");
       } catch {
         setStatus("denied");
@@ -122,3 +122,4 @@ export default function FarmaciaPage() {
     </div>
   );
 }
+
