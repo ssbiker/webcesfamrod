@@ -978,16 +978,52 @@ export default function FuncionariosPortal() {
         setUser(currentUser);
         const userRef = doc(db, "users", currentUser.uid);
         const userSnap = await getDoc(userRef);
+
         if (userSnap.exists()) {
-          setUserRole(userSnap.data().role || "funcionario");
+          const data = userSnap.data();
+          setUserRole(data.role || "funcionario");
+          // Actualizar presencia: en línea, último acceso e incrementar contador
+          await updateDoc(userRef, {
+            isOnline: true,
+            lastLogin: Timestamp.now(),
+            loginCount: (data.loginCount || 0) + 1,
+          });
         } else {
           const isMasterAdmin = currentUser.email === "ssanchez@cmvalparaiso.cl";
           const newRole = isMasterAdmin ? "admin" : "funcionario";
-          await setDoc(userRef, { email: currentUser.email, role: newRole, createdAt: Timestamp.now() });
+          await setDoc(userRef, {
+            email: currentUser.email,
+            name: currentUser.displayName || "",
+            role: newRole,
+            isOnline: true,
+            lastLogin: Timestamp.now(),
+            loginCount: 1,
+            isGenericAccount: false,
+            hasGestionAccess: false,
+            hasFarmaciaAccess: false,
+            createdAt: Timestamp.now(),
+          });
           setUserRole(newRole);
         }
+
+        // Marcar offline al cerrar el navegador/pestaña
+        const markOffline = () => {
+          navigator.sendBeacon(
+            `https://firestore.googleapis.com/v1/projects/landing-cesfamrod/databases/(default)/documents/users/${currentUser.uid}`,
+          );
+          updateDoc(doc(db, "users", currentUser.uid), { isOnline: false }).catch(() => {});
+        };
+        window.addEventListener("beforeunload", markOffline);
+        return () => window.removeEventListener("beforeunload", markOffline);
+
       } else {
-        setUser(null);
+        // Usuario cerró sesión — marcar offline al usuario anterior
+        setUser(prev => {
+          if (prev) {
+            updateDoc(doc(db, "users", prev.uid), { isOnline: false }).catch(() => {});
+          }
+          return null;
+        });
         setUserRole("funcionario");
       }
       setLoading(false);
