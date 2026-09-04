@@ -141,6 +141,7 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
   const [userFilter, setUserFilter] = useState("Todos");
   const [searchDocQuery, setSearchDocQuery] = useState("");
   const [myTasks, setMyTasks] = useState<Record<string, any>[]>([]);
+  const [myRecetas, setMyRecetas] = useState<Record<string, any>[]>([]);
   const [showTasksPanel, setShowTasksPanel] = useState(false);
 
   // States Modales Generales
@@ -231,7 +232,20 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
       // Si hay error de permisos, ignorar
     });
 
-    return () => { unsubDocs(); unsubNotices(); unsubKanbanNotices(); unsubBoards(); unsubEvents(); unsubPublicNews(); unsubUsers(); unsubTasks(); };
+    // Recetas de Farmacia asignadas al médico actual
+    const recetasQ = query(
+      collection(db, "recetas_controladas"),
+      where("medicoUid", "==", user.uid),
+      where("eliminada", "==", false)
+    );
+    const unsubRecetas = onSnapshot(recetasQ, snap => {
+      const pendientes = snap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter((r: any) => r.estado !== "dispensada" && r.estado !== "rechazada");
+      setMyRecetas(pendientes);
+    }, () => {});
+
+    return () => { unsubDocs(); unsubNotices(); unsubKanbanNotices(); unsubBoards(); unsubEvents(); unsubPublicNews(); unsubUsers(); unsubTasks(); unsubRecetas(); };
   }, [isAdmin]);
 
   /* ─── Acciones CRUD ─── */
@@ -344,40 +358,49 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
               <button
                 onClick={() => setShowTasksPanel(prev => !prev)}
                 className="relative flex items-center p-2 text-gray-500 hover:text-[#7B2FBE] hover:bg-purple-50 rounded-full transition-colors"
-                title="Mis Tareas Kanban"
+                title="Mis Tareas y Recetas"
               >
                 <ListTodo className="w-5 h-5" />
-                {myTasks.filter(t => t.status !== "completado" && t.status !== "done" && t.status !== "completed").length > 0 && (
+                {(myTasks.length + myRecetas.length) > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center leading-none shadow-sm">
-                    {myTasks.filter(t => t.status !== "completado" && t.status !== "done" && t.status !== "completed").length > 9 ? "9+" : myTasks.filter(t => t.status !== "completado" && t.status !== "done" && t.status !== "completed").length}
+                    {(myTasks.length + myRecetas.length) > 9 ? "9+" : myTasks.length + myRecetas.length}
                   </span>
                 )}
               </button>
 
-              {/* Panel desplegable de tareas */}
+              {/* Panel desplegable de tareas y recetas */}
               {showTasksPanel && (
                 <>
                   {/* Overlay para cerrar */}
                   <div className="fixed inset-0 z-40" onClick={() => setShowTasksPanel(false)} />
-                  <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden">
+                  <div className="absolute right-0 top-full mt-2 w-88 bg-white rounded-2xl shadow-2xl border border-gray-100 z-50 overflow-hidden" style={{width: "360px"}}>
+
+                    {/* Header */}
                     <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-[#7B2FBE]/5 to-transparent">
                       <div className="flex items-center gap-2">
                         <ListTodo className="w-4 h-4 text-[#7B2FBE]" />
-                        <span className="font-black text-sm text-[#1A1A2E]">Mis Tareas</span>
-                        <span className="text-[10px] font-bold bg-[#7B2FBE] text-white px-1.5 py-0.5 rounded-full">{myTasks.length}</span>
+                        <span className="font-black text-sm text-[#1A1A2E]">Mis Alertas</span>
+                        <span className="text-[10px] font-bold bg-[#7B2FBE] text-white px-1.5 py-0.5 rounded-full">
+                          {myTasks.length + myRecetas.length}
+                        </span>
                       </div>
                       <button onClick={() => setShowTasksPanel(false)} className="text-gray-400 hover:text-gray-600">
                         <X className="w-4 h-4" />
                       </button>
                     </div>
 
-                    <div className="max-h-80 overflow-y-auto">
-                      {myTasks.length === 0 ? (
-                        <div className="py-10 text-center">
-                          <div className="text-3xl mb-2">✅</div>
-                          <p className="text-sm font-bold text-gray-500">¡Sin tareas pendientes!</p>
-                          <p className="text-xs text-gray-400 mt-1">Todo al día.</p>
+                    <div className="max-h-96 overflow-y-auto">
+
+                      {/* ── Sección Tareas Gestión ── */}
+                      <div className="px-4 pt-3 pb-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Layers className="w-3.5 h-3.5 text-amber-600" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-amber-600">Tareas Gestión</span>
+                          <span className="text-[9px] font-bold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{myTasks.length}</span>
                         </div>
+                      </div>
+                      {myTasks.length === 0 ? (
+                        <div className="px-4 pb-3 text-xs text-gray-400 font-medium">Sin tareas pendientes ✅</div>
                       ) : (
                         <div className="divide-y divide-gray-50">
                           {myTasks.map(task => {
@@ -387,15 +410,12 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                               <div key={task.id} className="px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors">
                                 <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${isOverdue ? "bg-red-500" : task.isUrgent ? "bg-amber-500" : "bg-[#7B2FBE]"}`} />
                                 <div className="flex-1 min-w-0">
-                                  {/* Texto del ítem de checklist */}
                                   <p className="text-sm font-bold text-[#1A1A2E] leading-tight">{task.title}</p>
-                                  {/* Tarjeta y checklist padre */}
                                   <p className="text-[11px] text-gray-400 mt-0.5 truncate">
                                     <span className="font-semibold text-[#7B2FBE]/70">{task.cardTitle}</span>
                                     {task.checklistTitle && <span className="text-gray-300"> › {task.checklistTitle}</span>}
                                   </p>
                                   <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                                    <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-100 text-[#7B2FBE]">pendiente</span>
                                     {task.isUrgent && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">Urgente</span>}
                                     {isOverdue && <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-red-100 text-red-600">Vencida</span>}
                                     {expiry && !isOverdue && <span className="text-[9px] text-gray-400 font-bold">Vence: {expiry.toLocaleDateString("es-CL")}</span>}
@@ -406,13 +426,60 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
                           })}
                         </div>
                       )}
+
+                      {/* ── Sección Recetas Farmacia ── */}
+                      <div className="px-4 pt-3 pb-1 border-t border-gray-100 mt-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Pill className="w-3.5 h-3.5 text-emerald-600" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Recetas Farmacia</span>
+                          <span className="text-[9px] font-bold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full">{myRecetas.length}</span>
+                        </div>
+                      </div>
+                      {myRecetas.length === 0 ? (
+                        <div className="px-4 pb-3 text-xs text-gray-400 font-medium">Sin recetas pendientes ✅</div>
+                      ) : (
+                        <div className="divide-y divide-gray-50">
+                          {myRecetas.map((r: any) => {
+                            const limite = r.fechaLimite ? new Date(r.fechaLimite) : null;
+                            const vencida = limite && limite < new Date();
+                            return (
+                              <div key={r.id} className="px-4 py-3 flex items-start gap-3 hover:bg-gray-50 transition-colors">
+                                <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${vencida ? "bg-red-500" : "bg-emerald-500"}`} />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-bold text-[#1A1A2E] leading-tight truncate">{r.nombrePaciente}</p>
+                                  <p className="text-[11px] text-gray-500 mt-0.5 truncate">
+                                    💊 {r.medicamento}
+                                    {r.rut && <span className="text-gray-300"> · {r.rut}</span>}
+                                  </p>
+                                  <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+                                    <span className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full ${r.estado === "vencida" || vencida ? "bg-red-100 text-red-600" : "bg-emerald-100 text-emerald-700"}`}>
+                                      {vencida ? "Vencida" : r.estado}
+                                    </span>
+                                    {r.tipo && <span className="text-[9px] font-bold bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full capitalize">{r.tipo}</span>}
+                                    {r.sector && <span className="text-[9px] text-gray-400 font-bold">Sector {r.sector}</span>}
+                                    {limite && !vencida && <span className="text-[9px] text-gray-400 font-bold">Límite: {limite.toLocaleDateString("es-CL")}</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+
                     </div>
 
-                    <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
-                      <a href="/gestion" className="flex items-center justify-center gap-2 text-xs font-bold text-[#7B2FBE] hover:text-[#5C1FA0] transition-colors">
-                        Ir al Módulo de Gestión <ChevronRight className="w-3 h-3" />
+                    {/* Footer con accesos directos */}
+                    <div className="px-4 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-2">
+                      <a href="https://gestion-rodelillo.web.app/" target="_blank" rel="noopener noreferrer"
+                        className="flex items-center gap-1.5 text-xs font-bold text-amber-600 hover:text-amber-700 transition-colors">
+                        <Layers className="w-3 h-3" /> Gestión <ChevronRight className="w-3 h-3" />
+                      </a>
+                      <a href="/funcionarios/farmacia"
+                        className="flex items-center gap-1.5 text-xs font-bold text-emerald-600 hover:text-emerald-700 transition-colors">
+                        <Pill className="w-3 h-3" /> Farmacia <ChevronRight className="w-3 h-3" />
                       </a>
                     </div>
+
                   </div>
                 </>
               )}
