@@ -22,7 +22,7 @@ import {
   Lock, Mail, AlertCircle, LogOut, FileSpreadsheet, FileText, FolderOpen,
   Users, Bell, Calendar as CalendarIcon, ChevronRight, Plus, ExternalLink, Home, Search,
   Settings, MessageCircle, Phone, Stethoscope, Shield, X, Maximize, Trash2,
-  FileIcon, ChevronLeft, CalendarDays, Megaphone, ListTodo, Layers
+  FileIcon, ChevronLeft, CalendarDays, Megaphone, ListTodo, Layers, Pill
 } from "lucide-react";
 
 /* ─── Helpers: Smart Parsing Google Drive ─── */
@@ -478,6 +478,14 @@ function Dashboard({ user, userRole, onLogout }: { user: User; userRole: string;
               className="shrink-0 inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-black bg-amber-400/20 text-amber-700 hover:bg-amber-400/30 transition-all border border-amber-300/50"
             >
               <Layers className="w-4 h-4" />Gestión
+            </a>
+
+            {/* Botón Farmacia */}
+            <a
+              href="/funcionarios/farmacia"
+              className="shrink-0 inline-flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-black bg-emerald-400/20 text-emerald-700 hover:bg-emerald-400/30 transition-all border border-emerald-300/50"
+            >
+              <Pill className="w-4 h-4" />Farmacia
             </a>
           </div>
         </div>
