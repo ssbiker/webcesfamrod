@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   DndContext, DragEndEvent, DragOverlay, DragStartEvent,
   PointerSensor, useSensor, useSensors, closestCenter,
@@ -16,7 +16,6 @@ import {
   Calendar, Clock, Users, History, HelpCircle,
   LayoutDashboard, Columns2, List, ChevronRight, X, Grid3x3,
 } from "lucide-react";
-import { useEffect } from "react";
 import {
   collection, addDoc, updateDoc, deleteDoc, doc, Timestamp,
 } from "firebase/firestore";
@@ -547,6 +546,25 @@ export function AvisosKanban({ notices: propNotices, boards: propBoards, userEma
   /* Separate active from trashed */
   const activeNoticesRaw = propNotices.filter((n: any) => !n.isDeleted && !n.deleted);
   const trashedNotices = propNotices.filter((n: any) => n.isDeleted || n.deleted);
+
+  /* Auto-expirar: mover a papelera avisos cuya fecha de caducidad ya pasó */
+  useEffect(() => {
+    const now = new Date();
+    const expired = activeNoticesRaw.filter(n => {
+      if (!n.expiresAt) return false;
+      const d = toDate(n.expiresAt);
+      return d && d < now;
+    });
+    if (expired.length === 0) return;
+    expired.forEach(n => {
+      updateDoc(doc(db, "announcements", n.id), {
+        isDeleted: true,
+        autoExpired: true,
+        autoExpiredAt: new Date().toISOString(),
+      }).catch(() => {});
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [propNotices]);
 
   const notices: Notice[] = activeNoticesRaw
     .map(n => n.id in dragOverrides ? { ...n, boardId: dragOverrides[n.id] } : n)
