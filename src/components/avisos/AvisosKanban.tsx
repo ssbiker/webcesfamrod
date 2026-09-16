@@ -601,7 +601,7 @@ export function AvisosKanban({ notices: propNotices, boards: propBoards, userEma
       content: nContent.trim(),
       color: "#7B2FBE",
       isUrgent: false,
-      boardId: nBoardId || (boards.length > 0 ? boards[0].id : null),
+      boardId: nBoardId,
       width: "half",
       order: notices.length,
       author: authorLabel,
@@ -612,7 +612,7 @@ export function AvisosKanban({ notices: propNotices, boards: propBoards, userEma
       isDeleted: false,
     });
     setShowNewNotice(false);
-    setNTitle(""); setNContent(""); setNEventAt(""); setNExpiry(""); setNSubnotes([]);
+    setNTitle(""); setNContent(""); setNEventAt(""); setNExpiry(""); setNSubnotes([]); setNBoardId(null);
   };
 
   const handleUpdateNotice = async (id: string, data: Partial<Notice>) => {
