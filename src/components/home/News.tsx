@@ -42,27 +42,44 @@ export function News() {
           {news.map((item, i) => (
             <div 
               key={item.id} 
-              className="bg-white rounded-3xl p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgb(123,47,190,0.1)] transition-all duration-300 group relative overflow-hidden animate-fade-up"
+              className="bg-white rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgb(123,47,190,0.1)] transition-all duration-300 group relative overflow-hidden animate-fade-up flex flex-col"
               style={{ animationDelay: `${i * 100}ms` }}
             >
-              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#7B2FBE] via-[#5CB85C] to-[#F5C518] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500" />
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[#7B2FBE] via-[#5CB85C] to-[#F5C518] transform scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500 z-20" />
               
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 text-sm font-bold text-gray-400 mb-6">
-                  <Calendar className="w-4 h-4 text-[#7B2FBE]" />
-                  <span>{item.createdAt?.toDate().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+              {item.imageUrl && (
+                <div className="w-full h-48 relative overflow-hidden shrink-0">
+                  <img 
+                    src={item.imageUrl} 
+                    alt={item.title} 
+                    className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" 
+                  />
+                </div>
+              )}
+              
+              <div className="relative z-10 p-8 flex-1 flex flex-col">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2 text-sm font-bold text-gray-400">
+                    <Calendar className="w-4 h-4 text-[#7B2FBE]" />
+                    <span>{item.createdAt?.toDate().toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
+                  </div>
+                  {item.category && (
+                    <span className="text-[10px] font-black uppercase px-2 py-1 rounded-md bg-purple-50 text-[#7B2FBE]">
+                      {item.category}
+                    </span>
+                  )}
                 </div>
                 
                 <h3 className="text-2xl font-black font-heading text-[#1A1A2E] mb-4 leading-tight group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-br group-hover:from-[#7B2FBE] group-hover:to-[#1A1A2E] transition-all">
                   {item.title}
                 </h3>
                 
-                <p className="text-gray-500 leading-relaxed text-sm whitespace-pre-wrap">
+                <p className="text-gray-500 leading-relaxed text-sm whitespace-pre-wrap flex-1">
                   {item.content}
                 </p>
               </div>
               
-              <Megaphone className="w-32 h-32 absolute -bottom-6 -right-6 text-gray-50/50 transform -rotate-12 group-hover:scale-110 group-hover:text-purple-50/50 transition-all duration-500 z-0" />
+              <Megaphone className="w-32 h-32 absolute -bottom-6 -right-6 text-gray-50/50 transform -rotate-12 group-hover:scale-110 group-hover:text-purple-50/50 transition-all duration-500 z-0 pointer-events-none" />
             </div>
           ))}
         </div>
