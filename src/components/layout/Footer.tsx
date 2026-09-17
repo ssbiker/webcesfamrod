@@ -14,16 +14,30 @@ export function Footer() {
         style={{ background: "radial-gradient(circle, var(--color-verde), transparent)", animationDelay: "3s" }} />
 
       <div className="max-w-7xl mx-auto px-6 relative">
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+        <div className="grid md:grid-cols-2 lg:grid-cols-5 gap-12 mb-16">
           {/* Brand */}
-          <div>
-            <div className="flex items-center gap-3 mb-5">
-              <div className="w-14 h-14 relative flex-shrink-0 bg-white/5 rounded-2xl p-2 border border-white/10">
-                <Image src="/logo.png" alt="Logo CESFAM" fill sizes="56px" className="object-contain p-1" />
+          <div className="lg:col-span-2">
+            <div className="flex flex-wrap lg:flex-nowrap items-center gap-4 mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 relative flex-shrink-0 bg-white/5 rounded-2xl p-2 border border-white/10">
+                  <Image src="/logo.png" alt="Logo CESFAM" fill sizes="56px" className="object-contain p-1" />
+                </div>
+                <div>
+                  <div className="font-black text-lg font-heading text-white leading-none">CESFAM</div>
+                  <div className="text-xs text-[var(--color-verde)] font-semibold tracking-wide">Rodelillo</div>
+                </div>
               </div>
-              <div>
-                <div className="font-black text-lg font-heading text-white">CESFAM</div>
-                <div className="text-xs text-[var(--color-verde)] font-semibold tracking-wide">Rodelillo</div>
+              
+              <div className="w-px h-10 bg-white/10" />
+
+              <div className="flex items-center gap-3">
+                <div className="w-14 h-14 relative flex-shrink-0 bg-white/5 rounded-2xl p-2 border border-white/10">
+                  <Image src="/images/logotipo-cecosf.png" alt="Logo CECOSF" fill sizes="56px" className="object-contain p-1" />
+                </div>
+                <div>
+                  <div className="font-black text-lg font-heading text-white leading-none">CECOSF</div>
+                  <div className="text-[10px] text-[var(--color-verde)] font-semibold tracking-wide uppercase">Juan Pablo II</div>
+                </div>
               </div>
             </div>
             <p className="text-white/40 text-sm leading-relaxed mb-5">

@@ -4,6 +4,7 @@ import { Hero } from "@/components/home/Hero";
 import { Services } from "@/components/home/Services";
 import { News } from "@/components/home/News";
 import { About } from "@/components/home/About";
+import { CecosfSection } from "@/components/home/CecosfSection";
 import { Contact } from "@/components/home/Contact";
 import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
 
@@ -16,6 +17,7 @@ export default function Home() {
         <Services />
         <News />
         <About />
+        <CecosfSection />
         <Contact />
       </main>
       <Footer />

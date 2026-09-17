@@ -33,24 +33,31 @@ export function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-6">
         <nav className="flex items-center justify-between">
-          {/* Logo */}
+          {/* Logos */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="relative w-12 h-12 group-hover:scale-110 transition-transform duration-300">
-              <Image
-                src="/logo.png"
-                alt="CESFAM Rodelillo"
-                fill
-                sizes="48px"
-                className="object-contain drop-shadow-sm"
-              />
+            {/* CESFAM */}
+            <div className="flex items-center gap-2">
+              <div className="relative w-12 h-12 group-hover:scale-110 transition-transform duration-300">
+                <Image src="/logo.png" alt="CESFAM Rodelillo" fill sizes="48px" className="object-contain drop-shadow-sm" />
+              </div>
+              <div className="flex flex-col leading-tight">
+                <span className={`text-base font-black tracking-tight transition-colors duration-300 font-heading ${isScrolled ? "text-[var(--color-morado)]" : "text-white drop-shadow"}`}>CESFAM</span>
+                <span className={`text-xs font-semibold tracking-widest uppercase transition-colors duration-300 ${isScrolled ? "text-[var(--color-verde-oscuro)]" : "text-white/80 drop-shadow"}`}>Rodelillo</span>
+              </div>
             </div>
-            <div className="flex flex-col leading-tight">
-              <span className={`text-base font-black tracking-tight transition-colors duration-300 font-heading ${isScrolled ? "text-[var(--color-morado)]" : "text-white drop-shadow"}`}>
-                CESFAM
-              </span>
-              <span className={`text-xs font-semibold tracking-widest uppercase transition-colors duration-300 ${isScrolled ? "text-[var(--color-verde-oscuro)]" : "text-white/80 drop-shadow"}`}>
-                Rodelillo
-              </span>
+
+            {/* Separator */}
+            <div className={`h-8 w-px mx-1 transition-colors duration-300 ${isScrolled ? "bg-gray-200" : "bg-white/30"}`} />
+
+            {/* CECOSF */}
+            <div className="flex items-center gap-2">
+              <div className="relative w-12 h-12 group-hover:scale-110 transition-transform duration-300">
+                <Image src="/images/logotipo-cecosf.png" alt="CECOSF Juan Pablo II" fill sizes="48px" className="object-contain drop-shadow-sm" />
+              </div>
+              <div className="flex flex-col leading-tight">
+                <span className={`text-base font-black tracking-tight transition-colors duration-300 font-heading ${isScrolled ? "text-[var(--color-morado)]" : "text-white drop-shadow"}`}>CECOSF</span>
+                <span className={`text-[10px] font-semibold tracking-widest uppercase transition-colors duration-300 ${isScrolled ? "text-[var(--color-verde-oscuro)]" : "text-white/80 drop-shadow"}`}>Juan Pablo II</span>
+              </div>
             </div>
           </Link>
 

@@ -142,22 +142,30 @@ export function Hero() {
             ))}
 
             {/* Logo card */}
-            <div className="col-span-2 glass-dark rounded-2xl p-4 border border-white/10 flex items-center gap-4 animate-float">
-              <div className="w-16 h-16 relative flex-shrink-0">
-                <Image 
-                  src="/logo.png" 
-                  alt="Logo CESFAM Rodelillo" 
-                  fill 
-                  loading="eager"
-                  sizes="64px"
-                  className="object-contain drop-shadow-lg" 
-                />
+            <div className="col-span-2 glass-dark rounded-2xl p-4 border border-white/10 flex items-center justify-center gap-6 animate-float">
+              
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 relative flex-shrink-0">
+                  <Image src="/logo.png" alt="Logo CESFAM Rodelillo" fill loading="eager" sizes="64px" className="object-contain drop-shadow-lg" />
+                </div>
+                <div className="text-white">
+                  <div className="font-black text-sm font-heading">CESFAM Rodelillo</div>
+                  <div className="text-white/50 text-[11px] mt-0.5 leading-tight">Centro de Salud Familiar<br/>La Merced 4350</div>
+                </div>
               </div>
-              <div className="text-white">
-                <div className="font-black text-sm font-heading">CESFAM Rodelillo</div>
-                <div className="text-white/50 text-xs mt-0.5">Centro de Salud Familiar</div>
-                <div className="text-white/40 text-[10px] mt-1">La Merced 4350, Valparaíso</div>
+
+              <div className="w-px h-12 bg-white/10" />
+
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 relative flex-shrink-0">
+                  <Image src="/images/logotipo-cecosf.png" alt="Logo CECOSF" fill loading="eager" sizes="64px" className="object-contain drop-shadow-lg" />
+                </div>
+                <div className="text-white">
+                  <div className="font-black text-sm font-heading">CECOSF Juan Pablo II</div>
+                  <div className="text-white/50 text-[11px] mt-0.5 leading-tight">Centro Comunitario<br/>Rodolfo 2, Paradero 24</div>
+                </div>
               </div>
+
             </div>
           </div>
         </div>
